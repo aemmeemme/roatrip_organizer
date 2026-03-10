@@ -1,355 +1,244 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <title>Scotland Roadtrip Planner Pro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --sidebar-bg: #020617;
+            --accent: #3b82f6;
+            --border: #1e293b;
+            --text: #f8fafc;
+        }
 
-<meta charset="utf-8">
-<title>Scotland Roadtrip Planner</title>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
+        }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
-<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+        .container { display: grid; grid-template-columns: 400px 1fr; height: calc(100vh - 60px); }
+        
+        .sidebar { 
+            background: var(--sidebar-bg); overflow-y: auto; padding: 20px; 
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 20px;
+        }
 
-<style>
+        /* Form Styling */
+        .add-form { background: #1e293b; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
+        .add-form input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; }
+        
+        .controls { display: flex; gap: 10px; }
+        select { flex-grow: 1; background: #0f172a; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; }
 
-body{
-margin:0;
-font-family:system-ui;
-background:#0f172a;
-color:white;
-}
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px; background: #1e293b; color: #94a3b8; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
 
-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:15px 25px;
-background:#020617;
-border-bottom:1px solid #1e293b;
-}
+        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: #ef4444; color: white; padding: 4px 8px; }
+        .btn:hover { opacity: 0.8; }
 
-h1{
-font-size:20px;
-margin:0;
-}
-
-.container{
-display:grid;
-grid-template-columns:420px 1fr;
-height:calc(100vh - 60px);
-}
-
-.sidebar{
-background:#020617;
-overflow:auto;
-border-right:1px solid #1e293b;
-padding:20px;
-}
-
-.map{
-height:100%;
-}
-
-#map{
-height:100%;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-font-size:14px;
-}
-
-th{
-text-align:left;
-padding:8px;
-background:#1e293b;
-}
-
-td{
-padding:6px;
-border-bottom:1px solid #1e293b;
-}
-
-input{
-width:100%;
-background:#0f172a;
-border:1px solid #334155;
-color:white;
-padding:4px;
-}
-
-button{
-background:#3b82f6;
-border:none;
-color:white;
-padding:6px 10px;
-cursor:pointer;
-border-radius:4px;
-}
-
-button:hover{
-background:#2563eb;
-}
-
-.controls{
-margin-bottom:15px;
-display:flex;
-gap:10px;
-}
-
-select{
-background:#0f172a;
-color:white;
-border:1px solid #334155;
-padding:5px;
-}
-
-</style>
-
+        #map { height: 100%; background: #1e293b; }
+        
+        .loading-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5);
+            display:none; justify-content: center; align-items: center; z-index: 9999;
+        }
+    </style>
 </head>
-
 <body>
 
+<div id="loader" class="loading-overlay">Updating...</div>
+
 <header>
-
-<h1>🏴 Scotland Roadtrip Planner</h1>
-
+    <h1>🏴 Scotland Roadtrip</h1>
+    <div id="status">Ready</div>
 </header>
 
 <div class="container">
+    <div class="sidebar">
+        <div class="add-form">
+            <strong style="color: var(--accent)">+ Add New Leg</strong>
+            <input type="date" id="newDate">
+            <input type="text" id="newFrom" placeholder="From (e.g. Edinburgh)">
+            <input type="text" id="newTo" placeholder="To (e.g. Isle of Skye)">
+            <button class="btn btn-primary" onclick="handleAddStop()">Add to Itinerary</button>
+        </div>
 
-<div class="sidebar">
+        <div class="controls">
+            <select id="dateFilter" onchange="renderTable()"></select>
+        </div>
 
-<div class="controls">
+        <table id="tripTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Route</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-<select id="dateFilter"></select>
-
-<button onclick="addStop()">Add Stop</button>
-
-</div>
-
-<table id="tripTable">
-
-<thead>
-
-<tr>
-<th>Date</th>
-<th>From</th>
-<th>To</th>
-<th></th>
-</tr>
-
-</thead>
-
-<tbody></tbody>
-
-</table>
-
-</div>
-
-<div class="map">
-
-<div id="map"></div>
-
-</div>
-
+    <div class="map">
+        <div id="map"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Routing Machine -->
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-
-const API="https://script.google.com/macros/s/AKfycbze9NZUPeXys-xoXULBMnvyIwC4Z92Mru7Pqi9lZgskOJ1kNUsbv_jNFva7jP90Y5k5/exec";
-
-let trip=[];
-
-const map=L.map("map").setView([56.5,-4],7);
-
-L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-{maxZoom:19}
-).addTo(map);
-
-let routeLayer;
-let markers=[];
-
-async function loadData(){
-
-const res=await fetch(API);
-trip=await res.json();
-
-buildDateFilter();
-renderTable();
-
-}
-
-function buildDateFilter(){
-
-const dates=[...new Set(trip.map(t=>t.date))];
-
-const select=document.getElementById("dateFilter");
-
-select.innerHTML="<option value='all'>All dates</option>";
-
-dates.forEach(d=>{
-
-const o=document.createElement("option");
-o.value=d;
-o.textContent=d;
-
-select.appendChild(o);
-
-});
-
-}
-
-function renderTable(){
-
-const tbody=document.querySelector("#tripTable tbody");
-tbody.innerHTML="";
-
-const filter=document.getElementById("dateFilter").value;
-
-trip.forEach((t,i)=>{
-
-if(filter!=="all" && t.date!==filter) return;
-
-const tr=document.createElement("tr");
-
-tr.innerHTML=`
-
-<td>${formatDate(t.date)}</td>
-<td>${t.from}</td>
-<td>${t.to}</td>
-
-<td>
-<button onclick="removeStop(${i})">X</button>
-</td>
-
-`;
-
-tbody.appendChild(tr);
-
-});
-
-updateMap();
-
-}
-
-async function geocode(place){
-
-const url=`https://nominatim.openstreetmap.org/search?format=json&q=${place}`;
-
-const r=await fetch(url);
-const d=await r.json();
-
-return[
-parseFloat(d[0].lat),
-parseFloat(d[0].lon)
-];
-
-}
-
-let routingControl;
-
-async function updateMap(){
-
-if(routingControl){
-map.removeControl(routingControl);
-}
-
-markers.forEach(m=>map.removeLayer(m));
-markers=[];
-
-const filter=document.getElementById("dateFilter").value;
-
-const visible=trip.filter(t=>filter==="all" || t.date===filter);
-
-let waypoints=[];
-
-for(const stop of visible){
-
-const start=await geocode(stop.from+" Scotland");
-const end=await geocode(stop.to+" Scotland");
-
-if(start){
-
-markers.push(
-L.marker(start).addTo(map).bindPopup(stop.from)
-);
-
-waypoints.push(L.latLng(start[0],start[1]));
-
-}
-
-if(end){
-
-markers.push(
-L.marker(end).addTo(map).bindPopup(stop.to)
-);
-
-waypoints.push(L.latLng(end[0],end[1]));
-
-}
-
-}
-
-if(waypoints.length>1){
-
-routingControl=L.Routing.control({
-
-waypoints: waypoints,
-
-routeWhileDragging:false,
-
-addWaypoints:false,
-
-draggableWaypoints:false,
-
-show:false,
-
-createMarker:()=>null
-
-}).addTo(map);
-
-}
-
-}
-
-function addStop(){
-
-const date=prompt("Date (dd-mm-yyyy)");
-
-const from=prompt("From");
-const to=prompt("To");
-
-fetch(API,{
-method:"POST",
-body:JSON.stringify({
-date:date,
-day:"",
-from:from,
-dep:"",
-to:to,
-arr:"",
-km:"",
-hrs:""
-})
-}).then(loadData);
-
-}
-
-function removeStop(i){
-
-trip.splice(i,1);
-renderTable();
-
-}
-
-document.getElementById("dateFilter").onchange=renderTable;
-
-loadData();
-
+    const API = "YOUR_APPS_SCRIPT_URL_HERE"; // Update this with your deployed URL
+    
+    let trip = [];
+    let geoCache = new Map(); // Store coordinates here so we don't ask the API twice
+
+    const map = L.map("map").setView([56.5, -4], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let routingControl;
+    let markers = [];
+
+    async function loadData() {
+        showLoader(true);
+        try {
+            const res = await fetch(API);
+            trip = await res.json();
+            buildDateFilter();
+            renderTable();
+        } catch (e) {
+            alert("Error loading data. Check API URL.");
+        }
+        showLoader(false);
+    }
+
+    function buildDateFilter() {
+        const dates = [...new Set(trip.map(t => t.date))];
+        const select = document.getElementById("dateFilter");
+        select.innerHTML = "<option value='all'>Show All Days</option>";
+        dates.forEach(d => {
+            const o = document.createElement("option");
+            o.value = d;
+            o.textContent = d;
+            select.appendChild(o);
+        });
+    }
+
+    async function renderTable() {
+        const tbody = document.querySelector("#tripTable tbody");
+        tbody.innerHTML = "";
+        const filter = document.getElementById("dateFilter").value;
+
+        const visibleStops = trip.filter(t => filter === "all" || t.date === filter);
+
+        visibleStops.forEach((t) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${t.date}</td>
+                <td><strong>${t.from}</strong><br>→ ${t.to}</td>
+                <td><button class="btn btn-danger" onclick="deleteStop(${t.id})">✕</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        updateMap(visibleStops);
+    }
+
+    async function geocode(place) {
+        const query = place + ", Scotland";
+        if (geoCache.has(query)) return geoCache.get(query);
+
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+            const r = await fetch(url);
+            const d = await r.json();
+            if (d.length > 0) {
+                const coords = [parseFloat(d[0].lat), parseFloat(d[0].lon)];
+                geoCache.set(query, coords);
+                return coords;
+            }
+        } catch (e) { console.error("Geocoding error", e); }
+        return null;
+    }
+
+    async function updateMap(visibleStops) {
+        // Clear old markers/routes
+        if (routingControl) map.removeControl(routingControl);
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        let waypoints = [];
+
+        for (const stop of visibleStops) {
+            const start = await geocode(stop.from);
+            const end = await geocode(stop.to);
+
+            if (start) {
+                markers.push(L.circleMarker(start, {color: '#3b82f6'}).addTo(map).bindPopup(stop.from));
+                waypoints.push(L.latLng(start[0], start[1]));
+            }
+            if (end) {
+                markers.push(L.circleMarker(end, {color: '#10b981'}).addTo(map).bindPopup(stop.to));
+                waypoints.push(L.latLng(end[0], end[1]));
+            }
+        }
+
+        if (waypoints.length > 1) {
+            routingControl = L.Routing.control({
+                waypoints: waypoints,
+                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.6, weight: 4 }] },
+                createMarker: () => null,
+                addWaypoints: false,
+                show: false
+            }).addTo(map);
+        }
+    }
+
+    async function handleAddStop() {
+        const date = document.getElementById("newDate").value;
+        const from = document.getElementById("newFrom").value;
+        const to = document.getElementById("newTo").value;
+
+        if (!date || !from || !to) return alert("Fill all fields");
+
+        showLoader(true);
+        await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({ action: "add", date, from, to })
+        });
+        
+        // Reset form
+        document.getElementById("newFrom").value = "";
+        document.getElementById("newTo").value = "";
+        
+        loadData();
+    }
+
+    async function deleteStop(id) {
+        if (!confirm("Remove this leg?")) return;
+        showLoader(true);
+        await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({ action: "delete", id: id })
+        });
+        loadData();
+    }
+
+    function showLoader(show) {
+        document.getElementById("loader").style.display = show ? "flex" : "none";
+    }
+
+    loadData();
 </script>
 
 </body>
