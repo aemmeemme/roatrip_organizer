@@ -6,6 +6,8 @@
 <title>Scotland Roadtrip Planner</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <style>
 
@@ -157,7 +159,7 @@ padding:5px;
 
 <script>
 
-const API="https://script.google.com/macros/s/AKfycbwaCVDqabxEfadFHaE2htczvlV-5azoO2RMnZMt7NewNnjqhKVGy2xm9RxzoY0d6M7g/exec";
+const API="https://script.google.com/macros/s/AKfycbze9NZUPeXys-xoXULBMnvyIwC4Z92Mru7Pqi9lZgskOJ1kNUsbv_jNFva7jP90Y5k5/exec";
 
 let trip=[];
 
@@ -216,7 +218,7 @@ const tr=document.createElement("tr");
 
 tr.innerHTML=`
 
-<td>${t.date}</td>
+<td>${formatDate(t.date)}</td>
 <td>${t.from}</td>
 <td>${t.to}</td>
 
@@ -248,35 +250,67 @@ parseFloat(d[0].lon)
 
 }
 
+let routingControl;
+
 async function updateMap(){
 
-if(routeLayer) map.removeLayer(routeLayer);
+if(routingControl){
+map.removeControl(routingControl);
+}
+
 markers.forEach(m=>map.removeLayer(m));
 markers=[];
 
 const filter=document.getElementById("dateFilter").value;
 
-const visible=trip.filter(t=>filter==="all"||t.date===filter);
+const visible=trip.filter(t=>filter==="all" || t.date===filter);
 
-let coords=[];
+let waypoints=[];
 
-for(const s of visible){
+for(const stop of visible){
 
-const start=await geocode(s.from+" Scotland");
-const end=await geocode(s.to+" Scotland");
+const start=await geocode(stop.from+" Scotland");
+const end=await geocode(stop.to+" Scotland");
 
-coords.push(start);
-coords.push(end);
+if(start){
 
-markers.push(L.marker(start).addTo(map));
-markers.push(L.marker(end).addTo(map));
+markers.push(
+L.marker(start).addTo(map).bindPopup(stop.from)
+);
+
+waypoints.push(L.latLng(start[0],start[1]));
 
 }
 
-if(coords.length){
+if(end){
 
-routeLayer=L.polyline(coords,{color:"#22c55e",weight:4}).addTo(map);
-map.fitBounds(routeLayer.getBounds());
+markers.push(
+L.marker(end).addTo(map).bindPopup(stop.to)
+);
+
+waypoints.push(L.latLng(end[0],end[1]));
+
+}
+
+}
+
+if(waypoints.length>1){
+
+routingControl=L.Routing.control({
+
+waypoints: waypoints,
+
+routeWhileDragging:false,
+
+addWaypoints:false,
+
+draggableWaypoints:false,
+
+show:false,
+
+createMarker:()=>null
+
+}).addTo(map);
 
 }
 
