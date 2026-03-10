@@ -24,53 +24,71 @@
         
         .sidebar { 
             background: var(--sidebar-bg); overflow-y: auto; padding: 20px; 
-            border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 20px;
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px;
         }
 
-        .add-form { background: #1e293b; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
-        .add-form input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; }
-        
-        .controls { display: flex; gap: 10px; }
-        select { flex-grow: 1; background: #0f172a; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; }
+        /* Collapsible Form Styling */
+        .collapsible-header {
+            background: #1e293b; padding: 12px; border-radius: 8px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; font-weight: bold;
+        }
+        .add-form { 
+            background: #1e293b; padding: 15px; border-radius: 0 0 8px 8px; 
+            display: none; flex-direction: column; gap: 10px; border-top: 1px solid #334155;
+        }
+        .add-form.active { display: flex; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .add-form input { background: #0f172a; border: 1px solid #334155; color: white; padding: 10px; border-radius: 4px; }
+        
+        .controls { display: flex; gap: 10px; margin-top: 10px; }
+        select { flex-grow: 1; background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 4px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
         th { text-align: left; padding: 10px; background: #1e293b; color: #94a3b8; }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
 
         .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; transition: 0.2s; }
-        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary { background: var(--accent); color: white; width: 100%; }
         .btn-danger { background: #ef4444; color: white; padding: 4px 8px; }
 
         #map { height: 100%; background: #1e293b; }
         
-        /* FIX: Hide the verbose routing instructions panel */
-        .leaflet-routing-container {
-            display: none !important;
-        }
+        /* Hide routing panel */
+        .leaflet-routing-container { display: none !important; }
 
         .loading-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8);
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7);
             display:none; justify-content: center; align-items: center; z-index: 9999;
         }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">Updating map waypoints...</div>
+<div id="loader" class="loading-overlay">Processing route...</div>
 
 <header>
-    <h1>🏴 Scotland Roadtrip Planner</h1>
+    <h1>🏴 Scotland Planner</h1>
 </header>
 
 <div class="container">
     <div class="sidebar">
-        <div class="add-form">
-            <strong style="color: var(--accent)">+ Add New Stop</strong>
-            <input type="date" id="newDate">
-            <input type="text" id="newFrom" placeholder="From (e.g. Edinburgh)">
-            <input type="text" id="newTo" placeholder="To (e.g. Inverness)">
-            <button class="btn btn-primary" onclick="handleAddStop()">Add to Itinerary</button>
+        
+        <!-- Collapsible Section -->
+        <div>
+            <div class="collapsible-header" onclick="toggleForm()">
+                <span>📍 Add New Stop</span>
+                <span id="toggleIcon">+</span>
+            </div>
+            <div id="addForm" class="add-form">
+                <input type="date" id="newDate">
+                <!-- Autocomplete inputs using datalists -->
+                <input type="text" id="newFrom" placeholder="From..." list="geoList" oninput="doAutocomplete(this)">
+                <input type="text" id="newTo" placeholder="To..." list="geoList" oninput="doAutocomplete(this)">
+                <button class="btn btn-primary" onclick="handleAddStop()">Add to Itinerary</button>
+            </div>
         </div>
+
+        <datalist id="geoList"></datalist>
 
         <div class="controls">
             <select id="dateFilter" onchange="renderTable()"></select>
@@ -97,13 +115,12 @@
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    // PASTE YOUR DEPLOYED GOOGLE SCRIPT URL HERE
-    const API = "https://script.google.com/macros/s/AKfycbze9NZUPeXys-xoXULBMnvyIwC4Z92Mru7Pqi9lZgskOJ1kNUsbv_jNFva7jP90Y5k5/exec";
+    const API = "YOUR_APPS_SCRIPT_URL_HERE"; 
     
     let trip = [];
     let geoCache = new Map();
-
     const map = L.map("map").setView([56.5, -4], 7);
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
@@ -111,62 +128,83 @@
     let routingControl;
     let markers = [];
 
-    // FIX: Format date from ISO (2026-06-26...) to 26-06-2026 [ven]
+    // --- UI LOGIC ---
+
+    function toggleForm() {
+        const form = document.getElementById("addForm");
+        const icon = document.getElementById("toggleIcon");
+        form.classList.toggle("active");
+        icon.textContent = form.classList.contains("active") ? "−" : "+";
+    }
+
+    // --- AUTOCOMPLETE LOGIC ---
+
+    let autoTimer;
+    function doAutocomplete(input) {
+        clearTimeout(autoTimer);
+        const val = input.value;
+        if (val.length < 3) return;
+
+        // Debounce API calls to avoid hitting limits
+        autoTimer = setTimeout(async () => {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val + ", Scotland")}&limit=5`;
+            const r = await fetch(url);
+            const d = await r.json();
+            const list = document.getElementById("geoList");
+            list.innerHTML = "";
+            d.forEach(item => {
+                const opt = document.createElement("option");
+                opt.value = item.display_name.split(',')[0] + ", " + item.display_name.split(',')[1];
+                list.appendChild(opt);
+            });
+        }, 400);
+    }
+
+    // --- DATA & MAP LOGIC ---
+
     function formatDateDisplay(rawDate) {
         if (!rawDate) return "";
         const date = new Date(rawDate);
         if (isNaN(date.getTime())) return rawDate;
-
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
-        
         const weekdays = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-        const dayName = weekdays[date.getDay()];
-
-        return `${day}-${month}-${year} [${dayName}]`;
+        return `${day}-${month}-${year} [${weekdays[date.getDay()]}]`;
     }
 
     async function loadData() {
         showLoader(true);
-        try {
-            const res = await fetch(API);
-            trip = await res.json();
-            buildDateFilter();
-            renderTable();
-        } catch (e) {
-            console.error(e);
-        }
+        const res = await fetch(API);
+        trip = await res.json();
+        buildDateFilter();
+        renderTable();
         showLoader(false);
     }
 
     function buildDateFilter() {
         const uniqueDates = [...new Set(trip.map(t => t.date))];
         const select = document.getElementById("dateFilter");
-        const currentVal = select.value;
-        
-        select.innerHTML = "<option value='all'>All Dates</option>";
+        select.innerHTML = "<option value='all'>Full Trip View</option>";
         uniqueDates.forEach(d => {
             const o = document.createElement("option");
             o.value = d;
             o.textContent = formatDateDisplay(d);
             select.appendChild(o);
         });
-        if(currentVal) select.value = currentVal;
     }
 
     async function renderTable() {
         const tbody = document.querySelector("#tripTable tbody");
         tbody.innerHTML = "";
         const filter = document.getElementById("dateFilter").value;
-
         const visibleStops = trip.filter(t => filter === "all" || t.date === filter);
 
         visibleStops.forEach((t) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td style="white-space:nowrap">${formatDateDisplay(t.date)}</td>
-                <td><strong>${t.from}</strong><br><span style="color:#94a3b8">→ ${t.to}</span></td>
+                <td><strong>${t.from.split(',')[0]}</strong><br><span style="color:#94a3b8">→ ${t.to.split(',')[0]}</span></td>
                 <td><button class="btn btn-danger" onclick="deleteStop(${t.id})">✕</button></td>
             `;
             tbody.appendChild(tr);
@@ -176,11 +214,11 @@
     }
 
     async function geocode(place) {
-        const query = place + ", Scotland";
+        const query = place.includes("Scotland") ? place : place + ", Scotland";
         if (geoCache.has(query)) return geoCache.get(query);
 
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
             const r = await fetch(url);
             const d = await r.json();
             if (d && d.length > 0) {
@@ -197,33 +235,34 @@
         markers.forEach(m => map.removeLayer(m));
         markers = [];
 
-        let waypoints = [];
+        let waypointCoords = [];
 
+        // Build a unique list of points to visit in order
         for (const stop of visibleStops) {
-            const start = await geocode(stop.from);
-            const end = await geocode(stop.to);
+            const c1 = await geocode(stop.from);
+            const c2 = await geocode(stop.to);
 
-            if (start) {
-                markers.push(L.circleMarker(start, {radius: 6, color: '#3b82f6', fillOpacity: 0.8}).addTo(map).bindPopup(stop.from));
-                waypoints.push(L.latLng(start[0], start[1]));
-            }
-            if (end) {
-                markers.push(L.circleMarker(end, {radius: 6, color: '#10b981', fillOpacity: 0.8}).addTo(map).bindPopup(stop.to));
-                waypoints.push(L.latLng(end[0], end[1]));
-            }
+            if (c1) waypointCoords.push(L.latLng(c1[0], c1[1]));
+            if (c2) waypointCoords.push(L.latLng(c2[0], c2[1]));
+
+            // Add markers for the UI
+            if (c1) markers.push(L.circleMarker(c1, {radius:6, color:'#3b82f6'}).addTo(map).bindPopup(stop.from));
+            if (c2) markers.push(L.circleMarker(c2, {radius:6, color:'#10b981'}).addTo(map).bindPopup(stop.to));
         }
 
-        if (waypoints.length > 1) {
+        if (waypointCoords.length > 1) {
             routingControl = L.Routing.control({
-                waypoints: waypoints,
+                waypoints: waypointCoords,
                 router: L.Routing.osrmv1({ serviceUrl: `https://router.project-osrm.org/route/v1` }),
-                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.7, weight: 5 }] },
+                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.6, weight: 6 }] },
                 createMarker: () => null,
-                addWaypoints: false,
-                draggableWaypoints: false,
-                show: false, // Prevents the panel from opening
-                collapsible: false
+                show: false,
+                addWaypoints: false
             }).addTo(map);
+
+            // Fit map to show the whole route
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
         }
     }
 
@@ -242,16 +281,14 @@
         
         document.getElementById("newFrom").value = "";
         document.getElementById("newTo").value = "";
+        toggleForm(); // Collapse after adding
         loadData();
     }
 
     async function deleteStop(id) {
         if (!confirm("Remove this leg?")) return;
         showLoader(true);
-        await fetch(API, {
-            method: "POST",
-            body: JSON.stringify({ action: "delete", id: id })
-        });
+        await fetch(API, { method: "POST", body: JSON.stringify({ action: "delete", id: id }) });
         loadData();
     }
 
