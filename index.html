@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<title>Scotland Roadtrip Planner</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+body{
+margin:0;
+font-family:system-ui;
+background:#0f172a;
+color:white;
+}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:15px 25px;
+background:#020617;
+border-bottom:1px solid #1e293b;
+}
+
+h1{
+font-size:20px;
+margin:0;
+}
+
+.container{
+display:grid;
+grid-template-columns:420px 1fr;
+height:calc(100vh - 60px);
+}
+
+.sidebar{
+background:#020617;
+overflow:auto;
+border-right:1px solid #1e293b;
+padding:20px;
+}
+
+.map{
+height:100%;
+}
+
+#map{
+height:100%;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:14px;
+}
+
+th{
+text-align:left;
+padding:8px;
+background:#1e293b;
+}
+
+td{
+padding:6px;
+border-bottom:1px solid #1e293b;
+}
+
+input{
+width:100%;
+background:#0f172a;
+border:1px solid #334155;
+color:white;
+padding:4px;
+}
+
+button{
+background:#3b82f6;
+border:none;
+color:white;
+padding:6px 10px;
+cursor:pointer;
+border-radius:4px;
+}
+
+button:hover{
+background:#2563eb;
+}
+
+.controls{
+margin-bottom:15px;
+display:flex;
+gap:10px;
+}
+
+select{
+background:#0f172a;
+color:white;
+border:1px solid #334155;
+padding:5px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>🏴 Scotland Roadtrip Planner</h1>
+
+</header>
+
+<div class="container">
+
+<div class="sidebar">
+
+<div class="controls">
+
+<select id="dateFilter"></select>
+
+<button onclick="addStop()">Add Stop</button>
+
+</div>
+
+<table id="tripTable">
+
+<thead>
+
+<tr>
+<th>Date</th>
+<th>From</th>
+<th>To</th>
+<th></th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+<div class="map">
+
+<div id="map"></div>
+
+</div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const API="https://script.google.com/macros/s/AKfycbxcIafPcwV3UmETQBIo4FObhnDAu5n3uIn_tKyyIVywCy0Q57do6r2f_nz6yHmxxmdf/exec";
+
+let trip=[];
+
+const map=L.map("map").setView([56.5,-4],7);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{maxZoom:19}
+).addTo(map);
+
+let routeLayer;
+let markers=[];
+
+async function loadData(){
+
+const res=await fetch(API);
+trip=await res.json();
+
+buildDateFilter();
+renderTable();
+
+}
+
+function buildDateFilter(){
+
+const dates=[...new Set(trip.map(t=>t.date))];
+
+const select=document.getElementById("dateFilter");
+
+select.innerHTML="<option value='all'>All dates</option>";
+
+dates.forEach(d=>{
+
+const o=document.createElement("option");
+o.value=d;
+o.textContent=d;
+
+select.appendChild(o);
+
+});
+
+}
+
+function renderTable(){
+
+const tbody=document.querySelector("#tripTable tbody");
+tbody.innerHTML="";
+
+const filter=document.getElementById("dateFilter").value;
+
+trip.forEach((t,i)=>{
+
+if(filter!=="all" && t.date!==filter) return;
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${t.date}</td>
+<td>${t.from}</td>
+<td>${t.to}</td>
+
+<td>
+<button onclick="removeStop(${i})">X</button>
+</td>
+
+`;
+
+tbody.appendChild(tr);
+
+});
+
+updateMap();
+
+}
+
+async function geocode(place){
+
+const url=`https://nominatim.openstreetmap.org/search?format=json&q=${place}`;
+
+const r=await fetch(url);
+const d=await r.json();
+
+return[
+parseFloat(d[0].lat),
+parseFloat(d[0].lon)
+];
+
+}
+
+async function updateMap(){
+
+if(routeLayer) map.removeLayer(routeLayer);
+markers.forEach(m=>map.removeLayer(m));
+markers=[];
+
+const filter=document.getElementById("dateFilter").value;
+
+const visible=trip.filter(t=>filter==="all"||t.date===filter);
+
+let coords=[];
+
+for(const s of visible){
+
+const start=await geocode(s.from+" Scotland");
+const end=await geocode(s.to+" Scotland");
+
+coords.push(start);
+coords.push(end);
+
+markers.push(L.marker(start).addTo(map));
+markers.push(L.marker(end).addTo(map));
+
+}
+
+if(coords.length){
+
+routeLayer=L.polyline(coords,{color:"#22c55e",weight:4}).addTo(map);
+map.fitBounds(routeLayer.getBounds());
+
+}
+
+}
+
+function addStop(){
+
+const date=prompt("Date (dd-mm-yyyy)");
+
+const from=prompt("From");
+const to=prompt("To");
+
+fetch(API,{
+method:"POST",
+body:JSON.stringify({
+date:date,
+day:"",
+from:from,
+dep:"",
+to:to,
+arr:"",
+km:"",
+hrs:""
+})
+}).then(loadData);
+
+}
+
+function removeStop(i){
+
+trip.splice(i,1);
+renderTable();
+
+}
+
+document.getElementById("dateFilter").onchange=renderTable;
+
+loadData();
+
+</script>
+
+</body>
+</html>
