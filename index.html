@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scotland Roadtrip Planner Pro</title>
+    <title>Scotland Roadtrip Planner</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
@@ -11,13 +11,14 @@
             --accent: #3b82f6;
             --border: #1e293b;
             --text: #f8fafc;
+            --danger: #ef4444;
         }
 
-        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         
         header { 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
+            padding: 0 25px; height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
         }
 
         .container { display: grid; grid-template-columns: 420px 1fr; height: calc(100vh - 60px); }
@@ -27,73 +28,92 @@
             border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px;
         }
 
-        /* Collapsible Form Styling */
+        /* Collapsible Form */
         .collapsible-header {
-            background: #1e293b; padding: 12px; border-radius: 8px; cursor: pointer;
+            background: #1e293b; padding: 15px; border-radius: 8px; cursor: pointer;
             display: flex; justify-content: space-between; align-items: center; font-weight: bold;
+            transition: background 0.2s;
         }
+        .collapsible-header:hover { background: #2d3748; }
+        
         .add-form { 
             background: #1e293b; padding: 15px; border-radius: 0 0 8px 8px; 
-            display: none; flex-direction: column; gap: 10px; border-top: 1px solid #334155;
+            display: none; flex-direction: column; gap: 12px; border-top: 1px solid #334155;
+            margin-top: -5px;
         }
         .add-form.active { display: flex; }
 
-        .add-form input { background: #0f172a; border: 1px solid #334155; color: white; padding: 10px; border-radius: 4px; }
+        input, select { 
+            background: #0f172a; border: 1px solid #334155; color: white; 
+            padding: 10px; border-radius: 6px; font-size: 14px;
+        }
         
-        .controls { display: flex; gap: 10px; margin-top: 10px; }
-        select { flex-grow: 1; background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 4px; }
+        .controls { display: flex; gap: 10px; margin-top: 5px; }
+        #dateFilter { flex-grow: 1; }
 
+        /* Table Styling */
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th { text-align: left; padding: 10px; background: #1e293b; color: #94a3b8; }
-        td { padding: 10px; border-bottom: 1px solid var(--border); }
+        th { text-align: left; padding: 12px 8px; background: #1e293b; color: #94a3b8; font-weight: 600; }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 
-        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; transition: 0.2s; }
+        .btn { cursor: pointer; border: none; border-radius: 6px; padding: 10px 15px; font-weight: 600; transition: 0.2s; }
         .btn-primary { background: var(--accent); color: white; width: 100%; }
-        .btn-danger { background: #ef4444; color: white; padding: 4px 8px; }
+        .btn-danger { background: var(--danger); color: white; padding: 5px 10px; font-size: 12px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        #map { height: 100%; background: #1e293b; }
+        #map { height: 100%; background: #020617; }
         
-        /* Hide routing panel */
+        /* Hide the verbose Leaflet Routing panel */
         .leaflet-routing-container { display: none !important; }
 
+        /* Custom scrollbar */
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
         .loading-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7);
-            display:none; justify-content: center; align-items: center; z-index: 9999;
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8);
+            display:none; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; gap: 15px;
         }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">Processing route...</div>
+<div id="loader" class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Updating Itinerary...</span>
+</div>
 
 <header>
-    <h1>🏴 Scotland Planner</h1>
+    <h1>🏴 Scotland Roadtrip Planner</h1>
 </header>
 
 <div class="container">
     <div class="sidebar">
         
-        <!-- Collapsible Section -->
+        <!-- Add Stop Section -->
         <div>
             <div class="collapsible-header" onclick="toggleForm()">
-                <span>📍 Add New Stop</span>
+                <span>📍 Add New Leg</span>
                 <span id="toggleIcon">+</span>
             </div>
             <div id="addForm" class="add-form">
                 <input type="date" id="newDate">
-                <!-- Autocomplete inputs using datalists -->
-                <input type="text" id="newFrom" placeholder="From..." list="geoList" oninput="doAutocomplete(this)">
-                <input type="text" id="newTo" placeholder="To..." list="geoList" oninput="doAutocomplete(this)">
-                <button class="btn btn-primary" onclick="handleAddStop()">Add to Itinerary</button>
+                <input type="text" id="newFrom" placeholder="Starting point..." list="geoList" oninput="doAutocomplete(this)">
+                <input type="text" id="newTo" placeholder="Destination..." list="geoList" oninput="doAutocomplete(this)">
+                <button class="btn btn-primary" onclick="handleAddStop()">Save to Spreadsheet</button>
             </div>
         </div>
 
         <datalist id="geoList"></datalist>
 
+        <!-- Filter -->
         <div class="controls">
             <select id="dateFilter" onchange="renderTable()"></select>
         </div>
 
+        <!-- Itinerary Table -->
         <table id="tripTable">
             <thead>
                 <tr>
@@ -111,21 +131,69 @@
     </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    const API = "https://script.google.com/macros/s/AKfycbybdyhdrqnT189IGdXclFbvEVEiLcUKSgGfTLd_ZEVSnw_XZuq6dSHBMQVsyTsOc0Fv/exec"; 
+    // --- CONFIGURATION ---
+    // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE
+    const API = "https://script.google.com/macros/s/AKfycbybdyhdrqnT189IGdXclFbvEVEiLcUKSgGfTLd_ZEVSnw_XZuq6dSHBMQVsyTsOc0Fv/exec";
+    
     let trip = [];
     const map = L.map("map").setView([56.5, -4], 7);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap'
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
     }).addTo(map);
 
     let routingControl;
     let markers = [];
 
+    // --- UI HELPERS ---
+    function toggleForm() {
+        const form = document.getElementById("addForm");
+        const icon = document.getElementById("toggleIcon");
+        form.classList.toggle("active");
+        icon.textContent = form.classList.contains("active") ? "−" : "+";
+    }
+
+    function formatDateDisplay(rawDate) {
+        if (!rawDate) return "";
+        const date = new Date(rawDate);
+        if (isNaN(date.getTime())) return rawDate;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const weekdays = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+        return `${day}-${month}-${year} [${weekdays[date.getDay()]}]`;
+    }
+
+    // --- AUTOCOMPLETE (Nominatim) ---
+    let autoTimer;
+    function doAutocomplete(input) {
+        clearTimeout(autoTimer);
+        const val = input.value;
+        if (val.length < 3) return;
+
+        autoTimer = setTimeout(async () => {
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val + ", Scotland")}&limit=5`;
+                const r = await fetch(url);
+                const d = await r.json();
+                const list = document.getElementById("geoList");
+                list.innerHTML = "";
+                d.forEach(item => {
+                    const opt = document.createElement("option");
+                    // Clean address for shorter display
+                    opt.value = item.display_name.split(',').slice(0,2).join(',');
+                    list.appendChild(opt);
+                });
+            } catch(e) { console.error("Autocomplete error", e); }
+        }, 500);
+    }
+
+    // --- DATA HANDLING ---
     async function loadData() {
         showLoader(true);
         try {
@@ -133,14 +201,29 @@
             trip = await res.json();
             buildDateFilter();
             renderTable();
-        } catch(e) {
-            console.error("Error loading data", e);
+        } catch (e) {
+            console.error("Load failed", e);
+            alert("Check your API URL and Google Sheet permissions.");
         } finally {
             showLoader(false);
         }
     }
 
-    async function renderTable() {
+    function buildDateFilter() {
+        const uniqueDates = [...new Set(trip.map(t => t.date))];
+        const select = document.getElementById("dateFilter");
+        const currentSelection = select.value;
+        select.innerHTML = "<option value='all'>Show Full Trip</option>";
+        uniqueDates.forEach(d => {
+            const o = document.createElement("option");
+            o.value = d;
+            o.textContent = formatDateDisplay(d);
+            select.appendChild(o);
+        });
+        if (currentSelection) select.value = currentSelection;
+    }
+
+    function renderTable() {
         const tbody = document.querySelector("#tripTable tbody");
         tbody.innerHTML = "";
         const filter = document.getElementById("dateFilter").value;
@@ -150,7 +233,7 @@
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td style="white-space:nowrap">${formatDateDisplay(t.date)}</td>
-                <td><strong>${t.from.split(',')[0]}</strong><br><small>→ ${t.to.split(',')[0]}</small></td>
+                <td><strong>${t.from.split(',')[0]}</strong><br><span style="color:#94a3b8">→ ${t.to.split(',')[0]}</span></td>
                 <td><button class="btn btn-danger" onclick="deleteStop(${t.id})">✕</button></td>
             `;
             tbody.appendChild(tr);
@@ -159,7 +242,7 @@
         updateMap(visibleStops);
     }
 
-    // THIS IS NOW INSTANT
+    // --- MAP RENDERING (NOW INSTANT) ---
     function updateMap(visibleStops) {
         if (routingControl) map.removeControl(routingControl);
         markers.forEach(m => map.removeLayer(m));
@@ -168,17 +251,15 @@
         let waypointCoords = [];
 
         visibleStops.forEach(stop => {
-            // Use the coordinates directly from the Google Sheet data
+            // Read Lat/Lon from the data sent by Google Sheet
             if (stop.fromLat && stop.fromLon) {
                 const latLng = L.latLng(stop.fromLat, stop.fromLon);
-                const m = L.circleMarker(latLng, {radius:6, color:'#3b82f6', fillOpacity:0.8}).addTo(map);
-                markers.push(m);
+                markers.push(L.circleMarker(latLng, {radius:6, color:'#3b82f6', fillOpacity:0.8}).addTo(map).bindPopup(stop.from));
                 waypointCoords.push(latLng);
             }
             if (stop.toLat && stop.toLon) {
                 const latLng = L.latLng(stop.toLat, stop.toLon);
-                const m = L.circleMarker(latLng, {radius:6, color:'#10b981', fillOpacity:0.8}).addTo(map);
-                markers.push(m);
+                markers.push(L.circleMarker(latLng, {radius:6, color:'#10b981', fillOpacity:0.8}).addTo(map).bindPopup(stop.to));
                 waypointCoords.push(latLng);
             }
         });
@@ -186,11 +267,11 @@
         if (waypointCoords.length > 1) {
             routingControl = L.Routing.control({
                 waypoints: waypointCoords,
-                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.6, weight: 6 }] },
+                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.7, weight: 6 }] },
                 createMarker: () => null,
+                show: false,
                 addWaypoints: false,
-                draggableWaypoints: false,
-                show: false
+                draggableWaypoints: false
             }).addTo(map);
 
             const group = new L.featureGroup(markers);
@@ -198,37 +279,51 @@
         }
     }
 
-    // (Include toggleForm, doAutocomplete, handleAddStop, etc. from the previous version)
-    // Note: handleAddStop doesn't need to geocode anymore, the Google Script handles it!
-    
+    // --- API INTERACTIONS ---
     async function handleAddStop() {
         const date = document.getElementById("newDate").value;
         const from = document.getElementById("newFrom").value;
         const to = document.getElementById("newTo").value;
-        if (!date || !from || !to) return alert("Fill all fields");
+
+        if (!date || !from || !to) return alert("Please fill all fields");
 
         showLoader(true);
-        await fetch(API, {
-            method: "POST",
-            body: JSON.stringify({ action: "add", date, from, to })
-        });
-        
-        document.getElementById("newFrom").value = "";
-        document.getElementById("newTo").value = "";
-        toggleForm();
-        loadData();
+        try {
+            await fetch(API, {
+                method: "POST",
+                body: JSON.stringify({ action: "add", date, from, to })
+            });
+            // Reset form
+            document.getElementById("newFrom").value = "";
+            document.getElementById("newTo").value = "";
+            toggleForm();
+            await loadData();
+        } catch(e) {
+            alert("Error adding to sheet");
+            showLoader(false);
+        }
     }
+
     async function deleteStop(id) {
-        if (!confirm("Remove this leg?")) return;
+        if (!confirm("Remove this stop from your trip?")) return;
         showLoader(true);
-        await fetch(API, { method: "POST", body: JSON.stringify({ action: "delete", id: id }) });
-        loadData();
+        try {
+            await fetch(API, { 
+                method: "POST", 
+                body: JSON.stringify({ action: "delete", id: id }) 
+            });
+            await loadData();
+        } catch(e) {
+            alert("Error deleting stop");
+            showLoader(false);
+        }
     }
 
     function showLoader(show) {
         document.getElementById("loader").style.display = show ? "flex" : "none";
     }
 
+    // Initial Start
     loadData();
 </script>
 
