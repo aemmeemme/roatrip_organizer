@@ -151,7 +151,7 @@
         autoTimer = setTimeout(async () => {
             try {
                 // We restrict search to Scotland for better accuracy
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val + ", Scotland")}&limit=5`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`;
                 const r = await fetch(url);
                 const d = await r.json();
                 const list = document.getElementById("geoList");
