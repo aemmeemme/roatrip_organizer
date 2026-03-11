@@ -209,8 +209,12 @@ const API = "https://script.google.com/macros/s/AKfycbz5iyIjfDUzSIo3i2qaaISi7Gt3
             console.error("Delete error:", e);
             alert("Connection error while trying to delete.");
         }
-        showLoader(false);
+        finally{
+            showLoader(false);
+            loadData(currentTab);
+        }
     }
+
     function changeTab() { loadData(document.getElementById('sheetSelector').value); }
     function showLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
 
