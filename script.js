@@ -1,4 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbwOKMZ02NPgVSLIyJiW-Jm0asr1QzEXvXshQmLbcC1HlMaqcaR_CJC8t7OgN20cmkpW/exec";
+const API = "https://script.google.com/macros/s/AKfycbz5iyIjfDUzSIo3i2qaaISi7Gt3A0NeOJj6lqkQgf7kaKc0dEj6h-KueA_B9aYE4a8H/exec";
     let trip = [];
     let currentTab = "";
 
@@ -181,6 +181,36 @@ const API = "https://script.google.com/macros/s/AKfycbwOKMZ02NPgVSLIyJiW-Jm0asr1
         }).then(() => loadData(name));
     }
 
+    /**
+     * Delete a specific row from the Google Sheet
+     * @param {number} rowId - The ID (row number) provided by the Google Script
+     */
+    async function deleteRow(rowId) {
+        if (!confirm("Are you sure you want to remove this stop from the itinerary?")) return;
+
+        showLoader(true);
+        try {
+            const response = await fetch(API, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "delete",
+                    tab: currentTab,
+                    id: rowId
+                })
+            });
+
+            if (response.ok) {
+                // Refresh the data to show the updated list
+                await loadData(currentTab);
+            } else {
+                alert("Error deleting the row.");
+            }
+        } catch (e) {
+            console.error("Delete error:", e);
+            alert("Connection error while trying to delete.");
+        }
+        showLoader(false);
+    }
     function changeTab() { loadData(document.getElementById('sheetSelector').value); }
     function showLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
 
