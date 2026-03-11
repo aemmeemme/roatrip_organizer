@@ -245,7 +245,7 @@ function initCalendar() {
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         allDaySlot: false,
-        headerToolbar: { left: 'prev,next', center: 'title' },
+        headerToolbar: { left: 'prev,next', center: 'title', right: '' },
         initialDate: minDate,
         slotMinTime: '00:00:00',
         slotMaxTime: '23:59:00',
