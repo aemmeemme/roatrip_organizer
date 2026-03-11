@@ -1,4 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbz5iyIjfDUzSIo3i2qaaISi7Gt3A0NeOJj6lqkQgf7kaKc0dEj6h-KueA_B9aYE4a8H/exec";
+const API = "https://script.google.com/macros/s/AKfycbzsQnXhUX2nXG4xZEWik7hIXzFe4hqXTj9CjhnZ840sonwDSelg9mBUfWCqV2cq15ku/exec";
     let trip = [];
     let currentTab = "";
 
