@@ -1,4 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbzsQnXhUX2nXG4xZEWik7hIXzFe4hqXTj9CjhnZ840sonwDSelg9mBUfWCqV2cq15ku/exec";
+const API = "https://script.google.com/macros/s/AKfycbzI3C5uVjACmpNpS8WP23c-gTlHCIBsa-gALC-cV86hvcpZCJThWiBWX2ZXvJwzC-c3/exec";
 let trip = [];
 let currentTab = "";
 let agendaData = [];
@@ -243,11 +243,11 @@ function initCalendar() {
     if (calendar) calendar.destroy();
 
     calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridDay',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek' },
+        initialView: 'timeGridWeek',
+        headerToolbar: { left: 'prev,next', center: 'title' },
         initialDate: minDate,
-        slotMinTime: '07:00:00',
-        slotMaxTime: '23:00:00',
+        slotMinTime: '00:00:00',
+        slotMaxTime: '23:59:00',
         editable: true,
         selectable: true,
         events: agendaData.map(a => ({
