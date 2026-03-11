@@ -97,45 +97,50 @@
 </header>
 
 <div class="container">
-    <div class="sidebar">
-        
-        <div class="controls-group">
-            <small style="color: #94a3b8; font-weight: bold;">VIEW BY DAY</small>
-            <select id="dateFilter" onchange="renderTable()"></select>
-        </div>
-
-        <button class="btn btn-primary" onclick="document.getElementById('addForm').classList.toggle('active')">📍 Add New Stop</button>
-        
-        <!-- FORM WITH AUTOCOMPLETE HOOKS -->
-        <div id="addForm" class="add-form">
-            <input type="date" id="newDate">
-            <div class="row">
-                <input type="time" id="newDep" value="09:00">
-                <small style="align-self: center;">Dep.</small>
+    <div id="standardView" style="display: contents;">
+        <div class="sidebar">
+            <div class="controls-group">
+                <small style="color: #94a3b8; font-weight: bold;">VIEW BY DAY</small>
+                <select id="dateFilter" onchange="renderTable()"></select>
             </div>
-            <input type="text" id="newFrom" placeholder="Start Location..." list="geoList" oninput="doAutocomplete(this)">
-            <input type="text" id="newTo" placeholder="End Location..." list="geoList" oninput="doAutocomplete(this)">
-            <button class="btn btn-primary" onclick="handleAdd()">Save to Spreadsheet</button>
+
+            <button class="btn btn-primary" onclick="document.getElementById('addForm').classList.toggle('active')">📍 Add New Stop</button>
+
+            <!-- FORM WITH AUTOCOMPLETE HOOKS -->
+            <div id="addForm" class="add-form">
+                <input type="date" id="newDate">
+                <div class="row">
+                    <input type="time" id="newDep" value="09:00">
+                    <small style="align-self: center;">Dep.</small>
+                </div>
+                <input type="text" id="newFrom" placeholder="Start Location..." list="geoList" oninput="doAutocomplete(this)">
+                <input type="text" id="newTo" placeholder="End Location..." list="geoList" oninput="doAutocomplete(this)">
+                <button class="btn btn-primary" onclick="handleAdd()">Save to Spreadsheet</button>
+            </div>
+
+            <!-- SHARED DATALIST FOR SEARCH RESULTS -->
+            <datalist id="geoList"></datalist>
+
+            <button id="saveBtn" class="btn btn-save" onclick="saveChanges()">💾 Save Sequence</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Itinerary</th>
+                        <th>Schedule</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tripBody"></tbody>
+            </table>
         </div>
-
-        <!-- SHARED DATALIST FOR SEARCH RESULTS -->
-        <datalist id="geoList"></datalist>
-
-        <button id="saveBtn" class="btn btn-save" onclick="saveChanges()">💾 Save Sequence</button>
-
-        <table>
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Itinerary</th>
-                    <th>Schedule</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="tripBody"></tbody>
-        </table>
+        <div id="map"></div>
     </div>
-    <div id="map"></div>
+    <!-- NEW AGENDA VIEW -->
+    <div id="agendaView" style="grid-column: 1 / -1;">
+        <div id="calendar"></div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
