@@ -190,6 +190,7 @@ const API = "https://script.google.com/macros/s/AKfycbz5iyIjfDUzSIo3i2qaaISi7Gt3
 
         showLoader(true);
         try {
+            console.log("Tryin to delete row: ", rowId);
             const response = await fetch(API, {
                 method: "POST",
                 body: JSON.stringify({
