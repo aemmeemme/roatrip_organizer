@@ -28,7 +28,6 @@ const API = "https://script.google.com/macros/s/AKfycbwOKMZ02NPgVSLIyJiW-Jm0asr1
 
         autoTimer = setTimeout(async () => {
             try {
-                // We restrict search to Scotland for better accuracy
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`;
                 const r = await fetch(url);
                 const d = await r.json();
@@ -36,7 +35,6 @@ const API = "https://script.google.com/macros/s/AKfycbwOKMZ02NPgVSLIyJiW-Jm0asr1
                 list.innerHTML = "";
                 d.forEach(item => {
                     const opt = document.createElement("option");
-                    // We take the first two parts of the address (e.g., "Edinburgh, City of Edinburgh")
                     const cleanAddress = item.display_name.split(',').slice(0,2).join(',');
                     opt.value = cleanAddress;
                     list.appendChild(opt);
@@ -95,6 +93,7 @@ const API = "https://script.google.com/macros/s/AKfycbwOKMZ02NPgVSLIyJiW-Jm0asr1
                     <div class="route-info">
                         <span>${t.km || '--'} km</span>
                         <span>${t.hrs || ''}</span>
+                        <span>${t.date || ''}</span>
                     </div>
                 </td>
                 <td>
