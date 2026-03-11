@@ -100,7 +100,7 @@ const API = "https://script.google.com/macros/s/AKfycbz5iyIjfDUzSIo3i2qaaISi7Gt3
                     <div class="time-badge">Dep: ${t.dep || '09:00'}</div>
                     <div class="time-badge" style="background:#059669; margin-top:2px">Arr: ${t.arr || '--:--'}</div>
                 </td>
-                <td><button onclick="deleteRow(${i})" style="color:red; border:none; background:none; cursor:pointer">✕</button></td>
+                <td><button onclick="deleteRow(${tr.dataset.index})" style="color:red; border:none; background:none; cursor:pointer">✕</button></td>
             `;
             tbody.appendChild(tr);
         });
