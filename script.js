@@ -93,7 +93,7 @@ const API = "https://script.google.com/macros/s/AKfycbzsQnXhUX2nXG4xZEWik7hIXzFe
                     <div class="route-info">
                         <span>${t.km || '--'} km</span>
                         <span>${t.hrs || ''}</span>
-                        <span>${t.date || ''}</span>
+                        <span>${formatDateDisplay(t.date) || ''}</span>
                     </div>
                 </td>
                 <td>
