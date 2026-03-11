@@ -2,50 +2,73 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scotland Roadtrip Pro Planner</title>
+    <title>Scotland Roadtrip Pro</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <!-- SortableJS for Drag and Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --bg: #0f172a; --sidebar: #020617; --accent: #3b82f6; --border: #1e293b; --text: #f8fafc; }
-        body { margin: 0; font-family: system-ui; background: var(--bg); color: var(--text); overflow: hidden; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 60px; background: var(--sidebar); border-bottom: 1px solid var(--border); }
-        .container { display: grid; grid-template-columns: 480px 1fr; height: calc(100vh - 60px); }
-        .sidebar { background: var(--sidebar); overflow-y: auto; padding: 15px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         
-        .tab-controls { display: flex; gap: 8px; background: #1e293b; padding: 10px; border-radius: 8px; }
-        select, input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; font-size: 14px; }
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; height: 60px; background: var(--sidebar); border-bottom: 1px solid var(--border); 
+        }
+
+        .container { display: grid; grid-template-columns: 460px 1fr; height: calc(100vh - 60px); }
         
-        .add-form { background: #1e293b; padding: 15px; border-radius: 8px; display: none; flex-direction: column; gap: 10px; }
+        .sidebar { 
+            background: var(--sidebar); overflow-y: auto; padding: 15px; 
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; 
+        }
+        
+        /* Controls Section */
+        .controls-group { display: flex; flex-direction: column; gap: 8px; background: #1e293b; padding: 12px; border-radius: 8px; }
+        .row { display: flex; gap: 8px; }
+        select, input { 
+            background: #0f172a; border: 1px solid #334155; color: white; 
+            padding: 8px; border-radius: 4px; font-size: 13px; flex-grow: 1;
+        }
+        
+        .add-form { 
+            background: #1e293b; padding: 15px; border-radius: 8px; 
+            display: none; flex-direction: column; gap: 10px; border: 1px solid var(--accent);
+        }
         .add-form.active { display: flex; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        /* Table UI */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 2px solid var(--border); }
-        td { padding: 10px 5px; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         
-        /* Drag and Drop Styles */
-        .sortable-ghost { opacity: 0.4; background: #3b82f6 !important; }
-        .drag-handle { cursor: grab; color: #475569; font-size: 18px; padding-right: 10px; }
+        .drag-handle { cursor: grab; color: #475569; font-size: 18px; padding-right: 8px; }
+        .route-info { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 8px; }
+        .time-badge { background: #334155; padding: 2px 6px; border-radius: 4px; color: #fff; font-family: monospace; }
 
-        .route-info { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 10px; }
-        .time-badge { background: #334155; padding: 2px 5px; border-radius: 3px; color: #fff; }
-
-        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; }
+        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; transition: 0.2s; }
         .btn-primary { background: var(--accent); color: white; }
-        .btn-save { background: #10b981; color: white; width: 100%; margin-top: 10px; display: none; }
-        
-        #map { height: 100%; }
+        .btn-save { background: #10b981; color: white; width: 100%; margin-bottom: 10px; display: none; }
+        .btn:hover { opacity: 0.8; }
+
+        #map { height: 100%; background: #020617; }
         .leaflet-routing-container { display: none !important; }
-        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        
+        .loading { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; 
+            align-items: center; z-index: 9999; flex-direction: column; gap: 10px;
+        }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading">Processing...</div>
+<div id="loader" class="loading">
+    <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite;"></div>
+    <span>Syncing with Google Sheets...</span>
+</div>
 
 <header>
     <h1>🏴 Scotland Planner</h1>
-    <div class="tab-controls">
+    <div class="row">
         <select id="sheetSelector" onchange="changeTab()"></select>
         <button class="btn btn-primary" onclick="createNewTab()">+ New Trip</button>
     </div>
@@ -53,24 +76,33 @@
 
 <div class="container">
     <div class="sidebar">
-        <button class="btn btn-primary" onclick="document.getElementById('addForm').classList.toggle('active')">Add Stop</button>
+        
+        <div class="controls-group">
+            <small style="color: #94a3b8; font-weight: bold;">VIEW FILTER</small>
+            <select id="dateFilter" onchange="renderTable()"></select>
+        </div>
+
+        <button class="btn btn-primary" onclick="document.getElementById('addForm').classList.toggle('active')">📍 Add New Stop</button>
         
         <div id="addForm" class="add-form">
             <input type="date" id="newDate">
-            <input type="time" id="newDep" value="09:00">
-            <input type="text" id="newFrom" placeholder="From...">
-            <input type="text" id="newTo" placeholder="To...">
-            <button class="btn btn-primary" onclick="handleAdd()">Add to Sheet</button>
+            <div class="row">
+                <input type="time" id="newDep" value="09:00">
+                <small style="align-self: center;">Departure</small>
+            </div>
+            <input type="text" id="newFrom" placeholder="From (Start)...">
+            <input type="text" id="newTo" placeholder="To (End)...">
+            <button class="btn btn-primary" onclick="handleAdd()">Save to Sheet</button>
         </div>
 
-        <button id="saveBtn" class="btn btn-save" onclick="saveChanges()">💾 Save Reordering</button>
+        <button id="saveBtn" class="btn btn-save" onclick="saveChanges()">💾 Save New Order</button>
 
         <table>
             <thead>
                 <tr>
                     <th></th>
-                    <th>Itinerary</th>
-                    <th>Times</th>
+                    <th>Leg</th>
+                    <th>Schedule</th>
                     <th></th>
                 </tr>
             </thead>
@@ -89,15 +121,16 @@
     let currentTab = "";
 
     const map = L.map("map").setView([56.5, -4], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
     let routingControl, markers = [];
 
-    // Initialize Drag and Drop
-    const el = document.getElementById('tripBody');
-    Sortable.create(el, {
+    // Drag and Drop Initialization
+    Sortable.create(document.getElementById('tripBody'), {
         handle: '.drag-handle',
         animation: 150,
-        ghostClass: 'sortable-ghost',
         onEnd: () => {
             document.getElementById('saveBtn').style.display = 'block';
             reorderTripLocally();
@@ -106,62 +139,94 @@
 
     async function loadData(tab = "") {
         showLoader(true);
-        const res = await fetch(`${API}?tab=${encodeURIComponent(tab)}`);
-        const json = await res.json();
-        
-        trip = json.trip;
-        currentTab = json.currentTab;
+        try {
+            const res = await fetch(`${API}?tab=${encodeURIComponent(tab)}`);
+            const json = await res.json();
+            
+            trip = json.trip;
+            currentTab = json.currentTab;
 
-        // Build Tab Selector
-        const select = document.getElementById('sheetSelector');
-        select.innerHTML = json.sheets.map(s => `<option value="${s}" ${s === currentTab ? 'selected' : ''}>${s}</option>`).join('');
-        
-        renderTable();
+            // 1. Update Tab Selector
+            const sheetSelect = document.getElementById('sheetSelector');
+            sheetSelect.innerHTML = json.sheets.map(s => `<option value="${s}" ${s === currentTab ? 'selected' : ''}>${s}</option>`).join('');
+            
+            // 2. Build Date Filter
+            buildDateFilter();
+            
+            renderTable();
+        } catch(e) { console.error(e); }
         showLoader(false);
+    }
+
+    function buildDateFilter() {
+        const dateSelect = document.getElementById('dateFilter');
+        const uniqueDates = [...new Set(trip.map(t => formatDateDisplay(t.date)))];
+        
+        let html = `<option value="all">Full Itinerary View</option>`;
+        uniqueDates.forEach(d => {
+            html += `<option value="${d}">${d}</option>`;
+        });
+        dateSelect.innerHTML = html;
+    }
+
+    function formatDateDisplay(rawDate) {
+        if (!rawDate) return "";
+        const date = new Date(rawDate);
+        if (isNaN(date.getTime())) return rawDate;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const weekdays = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+        return `${day}-${month}-${year} [${weekdays[date.getDay()]}]`;
     }
 
     function renderTable() {
         const tbody = document.getElementById("tripBody");
         tbody.innerHTML = "";
+        const filterVal = document.getElementById('dateFilter').value;
         
-        trip.forEach((t, i) => {
+        // Filter trip based on date selection
+        const visibleStops = trip.filter(t => filterVal === "all" || formatDateDisplay(t.date) === filterVal);
+
+        visibleStops.forEach((t, i) => {
             const tr = document.createElement("tr");
-            tr.dataset.index = i;
+            tr.dataset.index = i; // This refers to the index in the 'trip' array
             tr.innerHTML = `
                 <td><span class="drag-handle">☰</span></td>
                 <td>
                     <strong>${t.from.split(',')[0]} → ${t.to.split(',')[0]}</strong>
                     <div class="route-info">
-                        <span>${t.km ? t.km + ' km' : '...'}</span>
-                        <span>${t.hrs ? t.hrs : ''}</span>
+                        <span>${t.km || '--'} km</span>
+                        <span>${t.hrs || ''}</span>
                     </div>
                 </td>
                 <td>
                     <div class="time-badge">Dep: ${t.dep || '09:00'}</div>
                     <div class="time-badge" style="background:#059669; margin-top:2px">Arr: ${t.arr || '--:--'}</div>
                 </td>
-                <td><button onclick="deleteRow(${i})" style="background:none; border:none; color:red; cursor:pointer">✕</button></td>
+                <td><button onclick="deleteRow(${i})" style="color:red; border:none; background:none; cursor:pointer">✕</button></td>
             `;
             tbody.appendChild(tr);
         });
-        updateMap();
+        
+        updateMap(visibleStops);
     }
 
-    function updateMap() {
+    function updateMap(visibleStops) {
         if (routingControl) map.removeControl(routingControl);
         markers.forEach(m => map.removeLayer(m));
         markers = [];
         let waypoints = [];
 
-        trip.forEach(t => {
+        visibleStops.forEach(t => {
             if (t.fromLat) {
                 const p = L.latLng(t.fromLat, t.fromLon);
-                markers.push(L.circleMarker(p, {radius:5, color:'#3b82f6'}).addTo(map));
+                markers.push(L.circleMarker(p, {radius:6, color:'#3b82f6', fillOpacity:0.8}).addTo(map).bindPopup("From: " + t.from));
                 waypoints.push(p);
             }
             if (t.toLat) {
                 const p = L.latLng(t.toLat, t.toLon);
-                markers.push(L.circleMarker(p, {radius:5, color:'#10b981'}).addTo(map));
+                markers.push(L.circleMarker(p, {radius:6, color:'#10b981', fillOpacity:0.8}).addTo(map).bindPopup("To: " + t.to));
                 waypoints.push(p);
             }
         });
@@ -169,34 +234,27 @@
         if (waypoints.length > 1) {
             routingControl = L.Routing.control({
                 waypoints: waypoints,
+                lineOptions: {
+                    styles: [{ color: '#3b82f6', opacity: 0.8, weight: 6 }] // NO MORE RED!
+                },
                 createMarker: () => null,
+                addWaypoints: false,
+                draggableWaypoints: false,
                 show: false
-            }).on('routesfound', function(e) {
-                const routes = e.routes[0];
-                calculateArrivals(routes.summary);
             }).addTo(map);
-            map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.2));
-        }
-    }
-
-    function calculateArrivals(summary) {
-        // This is a simplification. For precise per-leg calculation, 
-        // L.Routing.Machine provides detailed leg data.
-        // We'll update the first leg's KM/Hrs for this demo.
-        if (trip.length > 0) {
-            const totalKm = (summary.totalDistance / 1000).toFixed(1);
-            const totalHrs = Math.floor(summary.totalTime / 3600) + "h " + Math.round((summary.totalTime % 3600) / 60) + "m";
             
-            // Logic: Update the distance/time display
-            // In a real production app, we would loop through summary.legs
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.2));
         }
     }
 
+    // Logic for Drag & Drop Reordering
     function reorderTripLocally() {
         const rows = Array.from(document.querySelectorAll('#tripBody tr'));
+        // Note: Reordering only works effectively when viewing "All Dates"
         const newTrip = rows.map(row => trip[row.dataset.index]);
         trip = newTrip;
-        updateMap();
+        updateMap(trip);
     }
 
     async function saveChanges() {
@@ -224,7 +282,7 @@
     }
 
     function createNewTab() {
-        const name = prompt("Enter Trip Name:");
+        const name = prompt("Enter Trip Name (e.g. Summer2026):");
         if (!name) return;
         showLoader(true);
         fetch(API, {
@@ -239,7 +297,12 @@
 
     function showLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
 
+    // Start
     loadData();
 </script>
+
+<style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
 </body>
 </html>
