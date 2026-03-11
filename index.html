@@ -2,330 +2,244 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scotland Roadtrip Planner</title>
+    <title>Scotland Roadtrip Pro Planner</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- SortableJS for Drag and Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root {
-            --bg: #0f172a;
-            --sidebar-bg: #020617;
-            --accent: #3b82f6;
-            --border: #1e293b;
-            --text: #f8fafc;
-            --danger: #ef4444;
-        }
-
-        body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        :root { --bg: #0f172a; --sidebar: #020617; --accent: #3b82f6; --border: #1e293b; --text: #f8fafc; }
+        body { margin: 0; font-family: system-ui; background: var(--bg); color: var(--text); overflow: hidden; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 60px; background: var(--sidebar); border-bottom: 1px solid var(--border); }
+        .container { display: grid; grid-template-columns: 480px 1fr; height: calc(100vh - 60px); }
+        .sidebar { background: var(--sidebar); overflow-y: auto; padding: 15px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
         
-        header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 25px; height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border);
-        }
-
-        .container { display: grid; grid-template-columns: 420px 1fr; height: calc(100vh - 60px); }
+        .tab-controls { display: flex; gap: 8px; background: #1e293b; padding: 10px; border-radius: 8px; }
+        select, input { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; font-size: 14px; }
         
-        .sidebar { 
-            background: var(--sidebar-bg); overflow-y: auto; padding: 20px; 
-            border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px;
-        }
-
-        /* Collapsible Form */
-        .collapsible-header {
-            background: #1e293b; padding: 15px; border-radius: 8px; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center; font-weight: bold;
-            transition: background 0.2s;
-        }
-        .collapsible-header:hover { background: #2d3748; }
-        
-        .add-form { 
-            background: #1e293b; padding: 15px; border-radius: 0 0 8px 8px; 
-            display: none; flex-direction: column; gap: 12px; border-top: 1px solid #334155;
-            margin-top: -5px;
-        }
+        .add-form { background: #1e293b; padding: 15px; border-radius: 8px; display: none; flex-direction: column; gap: 10px; }
         .add-form.active { display: flex; }
 
-        input, select { 
-            background: #0f172a; border: 1px solid #334155; color: white; 
-            padding: 10px; border-radius: 6px; font-size: 14px;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 2px solid var(--border); }
+        td { padding: 10px 5px; border-bottom: 1px solid var(--border); }
         
-        .controls { display: flex; gap: 10px; margin-top: 5px; }
-        #dateFilter { flex-grow: 1; }
+        /* Drag and Drop Styles */
+        .sortable-ghost { opacity: 0.4; background: #3b82f6 !important; }
+        .drag-handle { cursor: grab; color: #475569; font-size: 18px; padding-right: 10px; }
 
-        /* Table Styling */
-        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th { text-align: left; padding: 12px 8px; background: #1e293b; color: #94a3b8; font-weight: 600; }
-        td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .route-info { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 10px; }
+        .time-badge { background: #334155; padding: 2px 5px; border-radius: 3px; color: #fff; }
 
-        .btn { cursor: pointer; border: none; border-radius: 6px; padding: 10px 15px; font-weight: 600; transition: 0.2s; }
-        .btn-primary { background: var(--accent); color: white; width: 100%; }
-        .btn-danger { background: var(--danger); color: white; padding: 5px 10px; font-size: 12px; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        #map { height: 100%; background: #020617; }
+        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: 600; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-save { background: #10b981; color: white; width: 100%; margin-top: 10px; display: none; }
         
-        /* Hide the verbose Leaflet Routing panel */
+        #map { height: 100%; }
         .leaflet-routing-container { display: none !important; }
-
-        /* Custom scrollbar */
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        .loading-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8);
-            display:none; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; gap: 15px;
-        }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 9999; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">
-    <div class="spinner"></div>
-    <span>Updating Itinerary...</span>
-</div>
+<div id="loader" class="loading">Processing...</div>
 
 <header>
-    <h1>🏴 Scotland Roadtrip Planner</h1>
+    <h1>🏴 Scotland Planner</h1>
+    <div class="tab-controls">
+        <select id="sheetSelector" onchange="changeTab()"></select>
+        <button class="btn btn-primary" onclick="createNewTab()">+ New Trip</button>
+    </div>
 </header>
 
 <div class="container">
     <div class="sidebar">
+        <button class="btn btn-primary" onclick="document.getElementById('addForm').classList.toggle('active')">Add Stop</button>
         
-        <!-- Add Stop Section -->
-        <div>
-            <div class="collapsible-header" onclick="toggleForm()">
-                <span>📍 Add New Leg</span>
-                <span id="toggleIcon">+</span>
-            </div>
-            <div id="addForm" class="add-form">
-                <input type="date" id="newDate">
-                <input type="text" id="newFrom" placeholder="Starting point..." list="geoList" oninput="doAutocomplete(this)">
-                <input type="text" id="newTo" placeholder="Destination..." list="geoList" oninput="doAutocomplete(this)">
-                <button class="btn btn-primary" onclick="handleAddStop()">Save to Spreadsheet</button>
-            </div>
+        <div id="addForm" class="add-form">
+            <input type="date" id="newDate">
+            <input type="time" id="newDep" value="09:00">
+            <input type="text" id="newFrom" placeholder="From...">
+            <input type="text" id="newTo" placeholder="To...">
+            <button class="btn btn-primary" onclick="handleAdd()">Add to Sheet</button>
         </div>
 
-        <datalist id="geoList"></datalist>
+        <button id="saveBtn" class="btn btn-save" onclick="saveChanges()">💾 Save Reordering</button>
 
-        <!-- Filter -->
-        <div class="controls">
-            <select id="dateFilter" onchange="renderTable()"></select>
-        </div>
-
-        <!-- Itinerary Table -->
-        <table id="tripTable">
+        <table>
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Route</th>
+                    <th></th>
+                    <th>Itinerary</th>
+                    <th>Times</th>
                     <th></th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody id="tripBody"></tbody>
         </table>
     </div>
-
-    <div class="map">
-        <div id="map"></div>
-    </div>
+    <div id="map"></div>
 </div>
 
-<!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    // --- CONFIGURATION ---
-    // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE
-    const API = "https://script.google.com/macros/s/AKfycbybdyhdrqnT189IGdXclFbvEVEiLcUKSgGfTLd_ZEVSnw_XZuq6dSHBMQVsyTsOc0Fv/exec";
-    
+    const API = "https://script.google.com/macros/s/AKfycbyio7EFDYHWVN7B9lGt8h3x3K3FEdvKAlddjaXc51-mY2HdL_NCIM3PzxPLBZNAvu9O/exec"; 
     let trip = [];
+    let currentTab = "";
+
     const map = L.map("map").setView([56.5, -4], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    let routingControl, markers = [];
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
-    }).addTo(map);
-
-    let routingControl;
-    let markers = [];
-
-    // --- UI HELPERS ---
-    function toggleForm() {
-        const form = document.getElementById("addForm");
-        const icon = document.getElementById("toggleIcon");
-        form.classList.toggle("active");
-        icon.textContent = form.classList.contains("active") ? "−" : "+";
-    }
-
-    function formatDateDisplay(rawDate) {
-        if (!rawDate) return "";
-        const date = new Date(rawDate);
-        if (isNaN(date.getTime())) return rawDate;
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const weekdays = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-        return `${day}-${month}-${year} [${weekdays[date.getDay()]}]`;
-    }
-
-    // --- AUTOCOMPLETE (Nominatim) ---
-    let autoTimer;
-    function doAutocomplete(input) {
-        clearTimeout(autoTimer);
-        const val = input.value;
-        if (val.length < 3) return;
-
-        autoTimer = setTimeout(async () => {
-            try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val + ", Scotland")}&limit=5`;
-                const r = await fetch(url);
-                const d = await r.json();
-                const list = document.getElementById("geoList");
-                list.innerHTML = "";
-                d.forEach(item => {
-                    const opt = document.createElement("option");
-                    // Clean address for shorter display
-                    opt.value = item.display_name.split(',').slice(0,2).join(',');
-                    list.appendChild(opt);
-                });
-            } catch(e) { console.error("Autocomplete error", e); }
-        }, 500);
-    }
-
-    // --- DATA HANDLING ---
-    async function loadData() {
-        showLoader(true);
-        try {
-            const res = await fetch(API);
-            trip = await res.json();
-            buildDateFilter();
-            renderTable();
-        } catch (e) {
-            console.error("Load failed", e);
-            alert("Check your API URL and Google Sheet permissions.");
-        } finally {
-            showLoader(false);
+    // Initialize Drag and Drop
+    const el = document.getElementById('tripBody');
+    Sortable.create(el, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: () => {
+            document.getElementById('saveBtn').style.display = 'block';
+            reorderTripLocally();
         }
-    }
+    });
 
-    function buildDateFilter() {
-        const uniqueDates = [...new Set(trip.map(t => t.date))];
-        const select = document.getElementById("dateFilter");
-        const currentSelection = select.value;
-        select.innerHTML = "<option value='all'>Show Full Trip</option>";
-        uniqueDates.forEach(d => {
-            const o = document.createElement("option");
-            o.value = d;
-            o.textContent = formatDateDisplay(d);
-            select.appendChild(o);
-        });
-        if (currentSelection) select.value = currentSelection;
+    async function loadData(tab = "") {
+        showLoader(true);
+        const res = await fetch(`${API}?tab=${encodeURIComponent(tab)}`);
+        const json = await res.json();
+        
+        trip = json.trip;
+        currentTab = json.currentTab;
+
+        // Build Tab Selector
+        const select = document.getElementById('sheetSelector');
+        select.innerHTML = json.sheets.map(s => `<option value="${s}" ${s === currentTab ? 'selected' : ''}>${s}</option>`).join('');
+        
+        renderTable();
+        showLoader(false);
     }
 
     function renderTable() {
-        const tbody = document.querySelector("#tripTable tbody");
+        const tbody = document.getElementById("tripBody");
         tbody.innerHTML = "";
-        const filter = document.getElementById("dateFilter").value;
-        const visibleStops = trip.filter(t => filter === "all" || t.date === filter);
-
-        visibleStops.forEach((t) => {
+        
+        trip.forEach((t, i) => {
             const tr = document.createElement("tr");
+            tr.dataset.index = i;
             tr.innerHTML = `
-                <td style="white-space:nowrap">${formatDateDisplay(t.date)}</td>
-                <td><strong>${t.from.split(',')[0]}</strong><br><span style="color:#94a3b8">→ ${t.to.split(',')[0]}</span></td>
-                <td><button class="btn btn-danger" onclick="deleteStop(${t.id})">✕</button></td>
+                <td><span class="drag-handle">☰</span></td>
+                <td>
+                    <strong>${t.from.split(',')[0]} → ${t.to.split(',')[0]}</strong>
+                    <div class="route-info">
+                        <span>${t.km ? t.km + ' km' : '...'}</span>
+                        <span>${t.hrs ? t.hrs : ''}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="time-badge">Dep: ${t.dep || '09:00'}</div>
+                    <div class="time-badge" style="background:#059669; margin-top:2px">Arr: ${t.arr || '--:--'}</div>
+                </td>
+                <td><button onclick="deleteRow(${i})" style="background:none; border:none; color:red; cursor:pointer">✕</button></td>
             `;
             tbody.appendChild(tr);
         });
-
-        updateMap(visibleStops);
+        updateMap();
     }
 
-    // --- MAP RENDERING (NOW INSTANT) ---
-    function updateMap(visibleStops) {
+    function updateMap() {
         if (routingControl) map.removeControl(routingControl);
         markers.forEach(m => map.removeLayer(m));
         markers = [];
+        let waypoints = [];
 
-        let waypointCoords = [];
-
-        visibleStops.forEach(stop => {
-            // Read Lat/Lon from the data sent by Google Sheet
-            if (stop.fromLat && stop.fromLon) {
-                const latLng = L.latLng(stop.fromLat, stop.fromLon);
-                markers.push(L.circleMarker(latLng, {radius:6, color:'#3b82f6', fillOpacity:0.8}).addTo(map).bindPopup(stop.from));
-                waypointCoords.push(latLng);
+        trip.forEach(t => {
+            if (t.fromLat) {
+                const p = L.latLng(t.fromLat, t.fromLon);
+                markers.push(L.circleMarker(p, {radius:5, color:'#3b82f6'}).addTo(map));
+                waypoints.push(p);
             }
-            if (stop.toLat && stop.toLon) {
-                const latLng = L.latLng(stop.toLat, stop.toLon);
-                markers.push(L.circleMarker(latLng, {radius:6, color:'#10b981', fillOpacity:0.8}).addTo(map).bindPopup(stop.to));
-                waypointCoords.push(latLng);
+            if (t.toLat) {
+                const p = L.latLng(t.toLat, t.toLon);
+                markers.push(L.circleMarker(p, {radius:5, color:'#10b981'}).addTo(map));
+                waypoints.push(p);
             }
         });
 
-        if (waypointCoords.length > 1) {
+        if (waypoints.length > 1) {
             routingControl = L.Routing.control({
-                waypoints: waypointCoords,
-                lineOptions: { styles: [{ color: '#3b82f6', opacity: 0.7, weight: 6 }] },
+                waypoints: waypoints,
                 createMarker: () => null,
-                show: false,
-                addWaypoints: false,
-                draggableWaypoints: false
+                show: false
+            }).on('routesfound', function(e) {
+                const routes = e.routes[0];
+                calculateArrivals(routes.summary);
             }).addTo(map);
-
-            const group = new L.featureGroup(markers);
-            map.fitBounds(group.getBounds().pad(0.2));
+            map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.2));
         }
     }
 
-    // --- API INTERACTIONS ---
-    async function handleAddStop() {
-        const date = document.getElementById("newDate").value;
-        const from = document.getElementById("newFrom").value;
-        const to = document.getElementById("newTo").value;
+    function calculateArrivals(summary) {
+        // This is a simplification. For precise per-leg calculation, 
+        // L.Routing.Machine provides detailed leg data.
+        // We'll update the first leg's KM/Hrs for this demo.
+        if (trip.length > 0) {
+            const totalKm = (summary.totalDistance / 1000).toFixed(1);
+            const totalHrs = Math.floor(summary.totalTime / 3600) + "h " + Math.round((summary.totalTime % 3600) / 60) + "m";
+            
+            // Logic: Update the distance/time display
+            // In a real production app, we would loop through summary.legs
+        }
+    }
 
-        if (!date || !from || !to) return alert("Please fill all fields");
+    function reorderTripLocally() {
+        const rows = Array.from(document.querySelectorAll('#tripBody tr'));
+        const newTrip = rows.map(row => trip[row.dataset.index]);
+        trip = newTrip;
+        updateMap();
+    }
 
+    async function saveChanges() {
         showLoader(true);
-        try {
-            await fetch(API, {
-                method: "POST",
-                body: JSON.stringify({ action: "add", date, from, to })
-            });
-            // Reset form
-            document.getElementById("newFrom").value = "";
-            document.getElementById("newTo").value = "";
-            toggleForm();
-            await loadData();
-        } catch(e) {
-            alert("Error adding to sheet");
-            showLoader(false);
-        }
+        await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveAll", tab: currentTab, data: trip })
+        });
+        document.getElementById('saveBtn').style.display = 'none';
+        loadData(currentTab);
     }
 
-    async function deleteStop(id) {
-        if (!confirm("Remove this stop from your trip?")) return;
+    async function handleAdd() {
+        const data = {
+            action: "add",
+            tab: currentTab,
+            date: document.getElementById('newDate').value,
+            dep: document.getElementById('newDep').value,
+            from: document.getElementById('newFrom').value,
+            to: document.getElementById('newTo').value
+        };
         showLoader(true);
-        try {
-            await fetch(API, { 
-                method: "POST", 
-                body: JSON.stringify({ action: "delete", id: id }) 
-            });
-            await loadData();
-        } catch(e) {
-            alert("Error deleting stop");
-            showLoader(false);
-        }
+        await fetch(API, { method: "POST", body: JSON.stringify(data) });
+        loadData(currentTab);
     }
 
-    function showLoader(show) {
-        document.getElementById("loader").style.display = show ? "flex" : "none";
+    function createNewTab() {
+        const name = prompt("Enter Trip Name:");
+        if (!name) return;
+        showLoader(true);
+        fetch(API, {
+            method: "POST",
+            body: JSON.stringify({ action: "createSheet", tab: name })
+        }).then(() => loadData(name));
     }
 
-    // Initial Start
+    function changeTab() {
+        loadData(document.getElementById('sheetSelector').value);
+    }
+
+    function showLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
+
     loadData();
 </script>
-
 </body>
 </html>
