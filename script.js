@@ -262,7 +262,7 @@ function initCalendar() {
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
             extendedProps: { ...a },
-            className: 'cat-' + a.category
+            className: a.booked = true ? ['cat-' + a.category, " cat-booked"] : ['cat-' + a.category, " cat-no-booked"]
         })),
 
         // ADD ACTIVITY
