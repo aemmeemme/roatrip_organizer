@@ -242,7 +242,7 @@ function initCalendar() {
     const minDate = dates[0] ? dates[0].toISOString().split('T')[0] : null;
 
     if (calendar) calendar.destroy();
-
+    console.log("Agenda data:\n", agendaData.length)
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         allDaySlot: false,
