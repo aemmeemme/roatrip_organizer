@@ -242,7 +242,7 @@ function initCalendar() {
     const minDate = dates[0] ? dates[0].toISOString().split('T')[0] : null;
 
     if (calendar) calendar.destroy();
-    console.log("Agenda data:\n", agendaData.length)
+    console.log("Agenda data:\n", agendaData)
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         allDaySlot: false,
@@ -262,7 +262,7 @@ function initCalendar() {
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
             extendedProps: { ...a },
-            className: a.booked = true ? ['cat-' + a.category, " cat-booked"] : ['cat-' + a.category, " cat-no-booked"]
+            className: a.booked == 'Y' ? ['cat-' + a.category, 'cat-booked'] : ['cat-' + a.category, 'cat-no-booked']
         })),
 
         // ADD ACTIVITY
