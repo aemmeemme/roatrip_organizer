@@ -258,7 +258,7 @@ function initCalendar() {
         selectable: true,
         events: agendaData.map(a => ({
             id: a.id,
-            title: `${a.city}: ${a.title} (${a.price}€) ${a.booked == 'Y' ? 'BOOKED' : 'NO BOOKED'}`,
+            title: `${a.city}: ${a.title} (${a.price}€)`,
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
             extendedProps: { ...a },
