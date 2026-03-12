@@ -246,6 +246,10 @@ function initCalendar() {
         initialView: 'timeGridWeek',
         allDaySlot: false,
         headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+        titleFormat: { year: 'numeric', month: 'short' },
+        slotLabelFormat: {hour: '2-digit',   minute: '2-digit', hour12: false},
+        dayHeaderFormat: {weekday: 'short', day: 'numeric', omitCommas: true },
+        firstDay: 1, // starting from monday
         initialDate: minDate,
         slotMinTime: '00:00:00',
         slotMaxTime: '23:59:00',
