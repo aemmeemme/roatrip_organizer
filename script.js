@@ -258,11 +258,11 @@ function initCalendar() {
         selectable: true,
         events: agendaData.map(a => ({
             id: a.id,
-            title: `${a.city}: ${a.title} (${a.price}€)`,
+            title: `${a.city}: ${a.title} (${a.price}€)` + a.booked == "Y" ? 'BOOKED' : 'NO BOOKED',
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
             extendedProps: { ...a },
-            className: a.booked == "Y" ? ['cat-' + a.category, 'cat-booked'] : ['cat-' + a.category, 'cat-no-booked']
+            className: 'cat-' + a.category
         })),
 
         // ADD ACTIVITY
