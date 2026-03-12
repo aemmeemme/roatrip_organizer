@@ -52,6 +52,7 @@ async function loadData(tab = "") {
         const res = await fetch(`${API}?tab=${encodeURIComponent(tab)}`);
         const json = await res.json();
         trip = json.trip;
+        agendaData = json.agenda || [];
         currentTab = json.currentTab;
 
         const sheetSelect = document.getElementById('sheetSelector');
