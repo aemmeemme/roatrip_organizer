@@ -259,55 +259,26 @@ function initCalendar() {
 
         editable: true,
         selectable: true,
-        events: agendaData.map(a => {
-
-        // 1. Safe Date Formatting
-        let d = a.date;
-        if (d.includes('/')) {
-            const p = d.split('/');
-            d = `${p[2]}-${p[1]}-${p[0]}`;
-        }
-
-        // 2. Logic for the Booking Icon
-        // If 'Y' show a green check, if 'N' show a yellow hourglass or warning
-        const statusIcon = (a.booked === 'Y' || a.booked === 'Yes') ? '✅' : '⏳';
-
-        // 3. Logic for the Price display
-        const priceText = a.price && a.price > 0 ? ` (${a.price}€)` : '';
-
-        return {
+        events: agendaData.map(a => ({
             id: a.id,
-            title: `${statusIcon} ${a.city}: ${a.title}${priceText}`,
+            title: `${a.booked === 'Y' ? '✅' : '⏳'} ${a.city}: ${a.title} (${a.price}€)`,
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
-            extendedProps: { ...a },
             className: 'cat-' + a.category
-            };
-        }),
+        })),
 
-        // ADD ACTIVITY
-        select: async function(info) {
+        // ADD NEW EVENT
+        select: function(info) {
             currentSelectedInfo = info;
             openModal(false);
         },
 
-        // EDIT (Drag/Resize)
-        eventChange: function(info) {
-            const index = agendaData.findIndex(a => a.id == info.event.id);
-            if (index > -1) {
-                agendaData[index].date = info.event.startStr.split('T')[0];
-                agendaData[index].start = info.event.startStr.split('T')[1].substring(0,5);
-                agendaData[index].end = info.event.endStr.split('T')[1].substring(0,5);
-                saveAgenda();
-            }
-        },
-
-        // DELETE
+        // EDIT EVENT
         eventClick: function(info) {
-            if (confirm("Delete this activity?")) {
-                agendaData = agendaData.filter(a => a.id != info.event.id);
-                info.event.remove();
-                saveAgenda();
+            const eventObj = agendaData.find(a => a.id == info.event.id);
+            if (eventObj) {
+                currentSelectedInfo = { startStr: info.event.startStr }; // Needed for the date
+                openModal(true, eventObj);
             }
         }
     });
