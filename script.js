@@ -256,14 +256,31 @@ function initCalendar() {
         slotMaxTime: '23:59:00',
         editable: true,
         selectable: true,
-        events: agendaData.map(a => ({
+        events: agendaData.map(a => {
+
+        // 1. Safe Date Formatting
+        let d = a.date;
+        if (d.includes('/')) {
+            const p = d.split('/');
+            d = `${p[2]}-${p[1]}-${p[0]}`;
+        }
+
+        // 2. Logic for the Booking Icon
+        // If 'Y' show a green check, if 'N' show a yellow hourglass or warning
+        const statusIcon = (a.booked === 'Y' || a.booked === 'Yes') ? '✅' : '⏳';
+
+        // 3. Logic for the Price display
+        const priceText = a.price && a.price > 0 ? ` (${a.price}€)` : '';
+
+        return {
             id: a.id,
-            title: `${a.city}: ${a.title} (${a.price}€)`,
+            title: `${statusIcon} ${a.city}: ${a.title}${priceText}`,
             start: `${a.date.split('T')[0]}T${a.start}`,
             end: `${a.date.split('T')[0]}T${a.end}`,
             extendedProps: { ...a },
             className: 'cat-' + a.category
-        })),
+            };
+        }),
 
         // ADD ACTIVITY
         select: async function(info) {
