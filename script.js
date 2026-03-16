@@ -245,15 +245,18 @@ function initCalendar() {
     console.log("Agenda data:\n", agendaData)
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
-        allDaySlot: false,
+        initialDate: minDate,
         headerToolbar: { left: 'prev,next', center: 'title', right: '' },
         titleFormat: { year: 'numeric', month: 'short' },
         slotLabelFormat: {hour: '2-digit',   minute: '2-digit', hour12: false},
         dayHeaderFormat: {weekday: 'short', day: 'numeric', omitCommas: true },
         firstDay: 1, // starting from monday
-        initialDate: minDate,
+
         slotMinTime: '00:00:00',
-        slotMaxTime: '23:59:00',
+        slotMaxTime: '24:00:00',
+        allDaySlot: false,
+        height: '100%',
+
         editable: true,
         selectable: true,
         events: agendaData.map(a => {
@@ -284,25 +287,8 @@ function initCalendar() {
 
         // ADD ACTIVITY
         select: async function(info) {
-            const city = prompt("City?");
-            const title = prompt("Activity Name?");
-            const price = prompt("Price (€)?", "0");
-            const cat = prompt("Category? (food, museum, nature, culture, photo)", "city");
-
-            if (title) {
-                const newEv = {
-                    date: info.startStr.split('T')[0],
-                    start: info.startStr.split('T')[1].substring(0,5),
-                    end: info.endStr.split('T')[1].substring(0,5),
-                    city: city,
-                    title: title,
-                    price: price,
-                    booked: 'N',
-                    category: cat
-                };
-                agendaData.push(newEv);
-                saveAgenda();
-            }
+            currentSelectedInfo = info;
+            openModal(false);
         },
 
         // EDIT (Drag/Resize)
@@ -335,6 +321,71 @@ async function saveAgenda() {
         body: JSON.stringify({ action: "saveAgenda", tab: currentTab, data: agendaData })
     });
     showLoader(false);
+}
+
+function openModal(isEdit, data = null) {
+    const modal = document.getElementById('eventModal');
+    modal.style.display = 'flex';
+
+    document.getElementById('modalTitle').innerText = isEdit ? "Edit Activity" : "Add Activity";
+    document.getElementById('deleteEventBtn').style.display = isEdit ? "block" : "none";
+
+    if (isEdit) {
+        document.getElementById('editEventId').value = data.id;
+        document.getElementById('eventTitle').value = data.title;
+        document.getElementById('eventCity').value = data.city;
+        document.getElementById('eventCat').value = data.category;
+        document.getElementById('eventPrice').value = data.price;
+        document.getElementById('eventBooked').value = data.booked;
+        document.getElementById('eventStart').value = data.start;
+        document.getElementById('eventEnd').value = data.end;
+    } else {
+        document.getElementById('editEventId').value = "";
+        document.getElementById('eventTitle').value = "";
+        document.getElementById('eventPrice').value = 0;
+        // Autofill times from calendar selection
+        document.getElementById('eventStart').value = currentSelectedInfo.startStr.split('T')[1].substring(0,5);
+        document.getElementById('eventEnd').value = currentSelectedInfo.endStr.split('T')[1].substring(0,5);
+    }
+}
+
+function closeModal() {
+    document.getElementById('eventModal').style.display = 'none';
+}
+
+async function handleSaveEvent() {
+    const id = document.getElementById('editEventId').value;
+    const entry = {
+        date: currentSelectedInfo.startStr.split('T')[0],
+        start: document.getElementById('eventStart').value,
+        end: document.getElementById('eventEnd').value,
+        city: document.getElementById('eventCity').value,
+        title: document.getElementById('eventTitle').value,
+        price: document.getElementById('eventPrice').value,
+        booked: document.getElementById('eventBooked').value,
+        category: document.getElementById('eventCat').value
+    };
+
+    if (id) {
+        const idx = agendaData.findIndex(a => a.id == id);
+        agendaData[idx] = { ...entry, id: id };
+    } else {
+        agendaData.push(entry);
+    }
+
+    closeModal();
+    await saveAgenda();
+    loadData(currentTab); // Full refresh to ensure IDs from Sheet are synced
+}
+
+async function handleDeleteEvent() {
+    const id = document.getElementById('editEventId').value;
+    if (confirm("Remove this activity?")) {
+        agendaData = agendaData.filter(a => a.id != id);
+        closeModal();
+        await saveAgenda();
+        loadData(currentTab);
+    }
 }
 
 

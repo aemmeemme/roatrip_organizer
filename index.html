@@ -30,9 +30,37 @@
         .mode-btn.active { background: var(--accent); color: white; }
 
         /* AGENDA CONTAINER */
-        #agendaView { display: none; padding: 20px; background: var(--bg); overflow-y: hidden; height: 92%; }
+        #agendaView {
+            display: none;
+            background: var(--bg);
+            height: calc(100vh - 80px); /* Adjust based on your header height */
+            padding: 10px;
+            overflow: hidden;
+        }
         .fc { color: white; background: #020617; border-radius: 8px; padding: 10px; overflow: hidden !important }
-        .fc-timegrid-slot { height: 40px !important; border-bottom: 1px solid #1e293b !important; }
+        .fc-timegrid-slot { height: 30px !important; border-bottom: 1px solid #1e293b !important; }
+
+
+        /* Remove the horizontal scroll from the header */
+        .fc-scroller-harness {
+            overflow: hidden !important;
+        }
+
+        /* Nice Custom Scrollbar for the Time Grid */
+        .fc-scroller::-webkit-scrollbar {
+            width: 8px;
+        }
+        .fc-scroller::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        .fc-scroller::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        .fc-scroller::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
 
         /* Category Colors */
         .cat-food { background: #10b981 !important; }
@@ -79,6 +107,26 @@
             align-items: center; z-index: 9999; flex-direction: column; gap: 10px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+
+        /* 2. Modal Styles */
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .modal-content {
+            background: #1e293b; width: 450px; border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); border: 1px solid #334155;
+        }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #334155; display: flex; justify-content: flex-end; gap: 10px; }
+
+        .form-row { display: flex; gap: 15px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        .close-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -144,6 +192,70 @@
     <!-- NEW AGENDA VIEW -->
     <div id="agendaView" style="grid-column: 1 / -1;">
         <div id="calendar"></div>
+    </div>
+</div>
+
+<div id="eventModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Activity</h3>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editEventId">
+
+            <div class="form-group">
+                <label>Activity Title</label>
+                <input type="text" id="eventTitle" placeholder="e.g. Castle Tour">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="eventCity" placeholder="e.g. Edinburgh">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="eventCat">
+                        <option value="city">City</option>
+                        <option value="food">Food/Drink</option>
+                        <option value="museum">Museum</option>
+                        <option value="nature">Nature</option>
+                        <option value="culture">Culture</option>
+                        <option value="photo">Photo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Time</label>
+                    <input type="time" id="eventStart">
+                </div>
+                <div class="form-group">
+                    <label>End Time</label>
+                    <input type="time" id="eventEnd">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Price (€)</label>
+                    <input type="number" id="eventPrice" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Booked?</label>
+                    <select id="eventBooked">
+                        <option value="N">No (⏳)</option>
+                        <option value="Y">Yes (✅)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" id="deleteEventBtn" style="display:none;" onclick="handleDeleteEvent()">Delete</button>
+            <button class="btn btn-primary" onclick="handleSaveEvent()">Save Activity</button>
+        </div>
     </div>
 </div>
 
