@@ -237,15 +237,15 @@ function switchMode(mode) {
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
 
-    // Find trip date range to constrain calendar
-    const dates = trip.map(t => new Date(t.date)).sort((a,b) => a-b);
-    const minDate = dates[0] ? dates[0].toISOString().split('T')[0] : null;
+    // SAFE DATE PARSING: Find first day of trip without UTC shifting
+    const sortedDates = trip.map(t => t.date).sort();
+    const initialDate = sortedDates.length > 0 ? sortedDates[0].split('T')[0] : new Date().toISOString().split('T')[0];
 
     if (calendar) calendar.destroy();
     console.log("Agenda data:\n", agendaData)
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
-        initialDate: minDate,
+        initialDate: initialDate,
         headerToolbar: { left: 'prev,next', center: 'title', right: '' },
         titleFormat: { year: 'numeric', month: 'short' },
         slotLabelFormat: {hour: '2-digit',   minute: '2-digit', hour12: false},

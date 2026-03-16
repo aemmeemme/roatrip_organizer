@@ -41,6 +41,26 @@
         .fc { color: white; background: #020617; border-radius: 8px; padding: 10px; overflow: hidden !important }
         .fc-timegrid-slot { height: 30px !important; border-bottom: 1px solid #1e293b !important; }
 
+        /* Fix for short events: ensure they are tall enough to show text */
+        .fc-timegrid-event {
+            min-height: 25px !important; /* Forces a minimum height */
+        }
+
+        .fc-event-main {
+            padding: 2px !important;
+        }
+
+        .fc-event-title {
+            font-size: 10px !important;
+            white-space: normal !important; /* Allows text to wrap to a second line */
+            line-height: 1.1 !important;
+            overflow: visible !important;
+        }
+
+        /* Hide the time inside the event to save space for the title */
+        .fc-event-time {
+            display: none !important;
+        }
 
         /* Remove the horizontal scroll from the header */
         .fc-scroller-harness {
