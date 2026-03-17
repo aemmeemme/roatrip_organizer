@@ -270,7 +270,7 @@ function initCalendar() {
         // ADD NEW EVENT
         select: function(info) {
             currentSelectedInfo = info;
-            openModal(false);
+            openModal(false, currentSelectedInfo);
         },
 
         // EDIT EVENT
@@ -329,6 +329,7 @@ function openModal(isEdit, data = null) {
     } else {
         document.getElementById('editEventId').value = "";
         document.getElementById('eventTitle').value = "";
+        document.getElementById('eventCity').value = "";
         document.getElementById('eventPrice').value = 0;
         // Autofill times from calendar selection
         document.getElementById('eventStart').value = currentSelectedInfo.startStr;
