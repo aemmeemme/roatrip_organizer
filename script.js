@@ -280,7 +280,6 @@ function initCalendar() {
                 console.log(eventObj)
                 console.log(info.event.start)
                 currentSelectedInfo = {
-                    dateStr: getNaiveDateString(info.event.start),
                     startStr: info.event.startStr
                 };
                 openModal(true, eventObj);
@@ -291,7 +290,6 @@ function initCalendar() {
             const idx = agendaData.findIndex(a => a.id == info.event.id);
             if (idx > -1) {
                 // Use the naive helper to avoid the -1 day jump
-                agendaData[idx].date = getNaiveDateString(info.event.start);
                 agendaData[idx].start = info.event.startStr.split('T')[1].substring(0,5);
                 agendaData[idx].end = info.event.endStr.split('T')[1].substring(0,5);
                 await saveAgenda();
