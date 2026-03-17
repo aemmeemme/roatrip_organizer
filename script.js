@@ -269,7 +269,10 @@ function initCalendar() {
 
         // ADD NEW EVENT
         select: function(info) {
-            currentSelectedInfo = info;
+            currentSelectedInfo = {
+                dateStr: getNaiveDateString(info.start),
+                startStr: info.startStr // keep for time extraction
+            };
             openModal(false);
         },
 
@@ -277,8 +280,22 @@ function initCalendar() {
         eventClick: function(info) {
             const eventObj = agendaData.find(a => a.id == info.event.id);
             if (eventObj) {
-                currentSelectedInfo = { startStr: info.event.startStr }; // Needed for the date
+                currentSelectedInfo = {
+                    dateStr: getNaiveDateString(info.event.start),
+                    startStr: info.event.startStr
+                };
                 openModal(true, eventObj);
+            }
+        },
+         // DRAG AND DROP
+        eventChange: async function(info) {
+            const idx = agendaData.findIndex(a => a.id == info.event.id);
+            if (idx > -1) {
+                // Use the naive helper to avoid the -1 day jump
+                agendaData[idx].date = getNaiveDateString(info.event.start);
+                agendaData[idx].start = info.event.startStr.split('T')[1].substring(0,5);
+                agendaData[idx].end = info.event.endStr.split('T')[1].substring(0,5);
+                await saveAgenda();
             }
         }
     });
@@ -292,6 +309,13 @@ async function saveAgenda() {
         body: JSON.stringify({ action: "saveAgenda", tab: currentTab, data: agendaData })
     });
     showLoader(false);
+}
+
+function getNaiveDateString(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 function openModal(isEdit, data = null) {
