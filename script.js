@@ -269,10 +269,7 @@ function initCalendar() {
 
         // ADD NEW EVENT
         select: function(info) {
-            currentSelectedInfo = {
-                dateStr: getNaiveDateString(info.start),
-                startStr: info.startStr // keep for time extraction
-            };
+            currentSelectedInfo = info;
             openModal(false);
         },
 
@@ -313,13 +310,6 @@ async function saveAgenda() {
     showLoader(false);
 }
 
-function getNaiveDateString(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
 function openModal(isEdit, data = null) {
     const modal = document.getElementById('eventModal');
     modal.style.display = 'flex';
@@ -341,8 +331,8 @@ function openModal(isEdit, data = null) {
         document.getElementById('eventTitle').value = "";
         document.getElementById('eventPrice').value = 0;
         // Autofill times from calendar selection
-        document.getElementById('eventStart').value = currentSelectedInfo.startStr.split('T')[1].substring(0,5);
-        document.getElementById('eventEnd').value = currentSelectedInfo.endStr.split('T')[1].substring(0,5);
+        document.getElementById('eventStart').value = currentSelectedInfo.startStr;
+        document.getElementById('eventEnd').value = currentSelectedInfo.endStr;
     }
 }
 
