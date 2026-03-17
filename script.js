@@ -270,7 +270,6 @@ function initCalendar() {
         // ADD NEW EVENT
         select: function(info) {
             console.log(info)
-            console.log(info.event.start)
             currentSelectedInfo = info;
             openModal(false, currentSelectedInfo);
         },
