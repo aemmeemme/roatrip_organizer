@@ -280,6 +280,8 @@ function initCalendar() {
         eventClick: function(info) {
             const eventObj = agendaData.find(a => a.id == info.event.id);
             if (eventObj) {
+                console.log(eventObj)
+                console.log(info.event.start)
                 currentSelectedInfo = {
                     dateStr: getNaiveDateString(info.event.start),
                     startStr: info.event.startStr
