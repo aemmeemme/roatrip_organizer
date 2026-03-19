@@ -352,7 +352,7 @@ async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
     console.log("date:\n", currentSelectedInfo.dateStr)
     const entry = {
-        date: currentSelectedInfo.dateStr,
+        date: currentSelectedInfo.date,
         start: document.getElementById('eventStart').value,
         end: document.getElementById('eventEnd').value,
         city: document.getElementById('eventCity').value,
