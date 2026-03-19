@@ -360,7 +360,7 @@ async function handleSaveEvent() {
     toLog = document.getElementById('eventDate').value
     console.log("div val: ", toLog)
     const entry = {
-        date: toLog,
+        date: toLog+"T00:00:00.000Z",
         start: document.getElementById('eventStart').value,
         end: document.getElementById('eventEnd').value,
         city: document.getElementById('eventCity').value,
