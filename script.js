@@ -340,8 +340,11 @@ function openModal(isEdit, data = null) {
         document.getElementById('eventCity').value = "";
         document.getElementById('eventPrice').value = 0;
         // Autofill times from calendar selection
-        document.getElementById('eventStart').value = currentSelectedInfo.startStr.split('T')[1].substring(0,5);
-        document.getElementById('eventEnd').value = currentSelectedInfo.endStr.split('T')[1].substring(0,5);
+        startDate = currentSelectedInfo.startStr.split('T')[1].substring(0,5)
+        endDate = currentSelectedInfo.endStr.split('T')[1].substring(0,5)
+        console.log("start: ", startDate, "\nend: ", endDate)
+        document.getElementById('eventStart').value = startDate;
+        document.getElementById('eventEnd').value = endDate;
     }
 }
 
@@ -351,7 +354,7 @@ function closeModal() {
 
 async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
-    console.log("date:\n", currentSelectedInfo.dateStr)
+    console.log("date:\n", currentSelectedInfo.endStr)
     const entry = {
         date: currentSelectedInfo.endStr,
         start: document.getElementById('eventStart').value,
