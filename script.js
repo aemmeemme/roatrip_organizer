@@ -275,11 +275,12 @@ function initCalendar() {
             const parts = info.startStr.split('T');
             const endParts = info.endStr.split('T');
 
-            currentSelectedInfo = {
-                dateStr: parts[0],      // e.g. "2026-06-28"
+            /*currentSelectedInfo = {
+                dateStr: endStr,      // e.g. "2026-06-28"
                 startTime: parts[1].substring(0,5), // e.g. "10:30"
                 endTime: endParts[1].substring(0,5)   // e.g. "11:30"
-            };
+            };*/
+            currentSelectedInfo = info
             openModal(false, info);
         },
 
@@ -339,8 +340,8 @@ function openModal(isEdit, data = null) {
         document.getElementById('eventCity').value = "";
         document.getElementById('eventPrice').value = 0;
         // Autofill times from calendar selection
-        document.getElementById('eventStart').value = currentSelectedInfo.startTime;
-        document.getElementById('eventEnd').value = currentSelectedInfo.endTime;
+        document.getElementById('eventStart').value = currentSelectedInfo..startStr.split('T')[1].substring(0,5);
+        document.getElementById('eventEnd').value = currentSelectedInfo..endStr.split('T')[1].substring(0,5);
     }
 }
 
