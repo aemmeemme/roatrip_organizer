@@ -270,8 +270,17 @@ function initCalendar() {
         // ADD NEW EVENT
         select: function(info) {
             console.log(info)
-            currentSelectedInfo = info;
-            openModal(false, currentSelectedInfo);
+            // info.startStr is "YYYY-MM-DDTHH:mm:ss"
+            // We split strictly by string to avoid timezone math
+            const parts = info.startStr.split('T');
+            const endParts = info.endStr.split('T');
+
+            currentSelectedInfo = {
+                dateStr: parts[0],      // e.g. "2026-06-28"
+                startTime: parts[1].substring(0,5), // e.g. "10:30"
+                endTime: endParts[1].substring(0,5)   // e.g. "11:30"
+            };
+            openModal(false);
         },
 
         // EDIT EVENT
@@ -310,7 +319,7 @@ async function saveAgenda() {
 function openModal(isEdit, data = null) {
     const modal = document.getElementById('eventModal');
     modal.style.display = 'flex';
-
+    console.log(data)
     document.getElementById('modalTitle').innerText = isEdit ? "Edit Activity" : "Add Activity";
     document.getElementById('deleteEventBtn').style.display = isEdit ? "block" : "none";
 
@@ -341,7 +350,7 @@ function closeModal() {
 async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
     const entry = {
-        date: currentSelectedInfo.startStr.split('T')[0],
+        date: currentSelectedInfo.startStr,
         start: document.getElementById('eventStart').value,
         end: document.getElementById('eventEnd').value,
         city: document.getElementById('eventCity').value,
