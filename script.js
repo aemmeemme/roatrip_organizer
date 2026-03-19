@@ -332,6 +332,7 @@ function openModal(isEdit, data = null) {
         document.getElementById('eventCat').value = data.category;
         document.getElementById('eventPrice').value = data.price;
         document.getElementById('eventBooked').value = data.booked;
+        document.getElementById('eventDate').value = data.date;
         document.getElementById('eventStart').value = data.start;
         document.getElementById('eventEnd').value = data.end;
     } else {
@@ -345,6 +346,7 @@ function openModal(isEdit, data = null) {
         console.log("start: ", startDate, "\nend: ", endDate)
         document.getElementById('eventStart').value = startDate;
         document.getElementById('eventEnd').value = endDate;
+        document.getElementById('eventDate').value = currentSelectedInfo.startStr.split('T')[0];
     }
 }
 
@@ -354,9 +356,8 @@ function closeModal() {
 
 async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
-    console.log("date:\n", currentSelectedInfo.endStr)
     const entry = {
-        date: currentSelectedInfo.endStr,
+        date: document.getElementById('eventDate').value,
         start: document.getElementById('eventStart').value,
         end: document.getElementById('eventEnd').value,
         city: document.getElementById('eventCity').value,
