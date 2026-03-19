@@ -343,10 +343,11 @@ function openModal(isEdit, data = null) {
         // Autofill times from calendar selection
         startDate = currentSelectedInfo.startStr.split('T')[1].substring(0,5)
         endDate = currentSelectedInfo.endStr.split('T')[1].substring(0,5)
-        console.log("start: ", startDate, "\nend: ", endDate)
+        eventDate = currentSelectedInfo.endStr.split('T')[0]
+        console.log("start: ", startDate, "\nend: ", endDate, "\nevent: ", eventDate)
         document.getElementById('eventStart').value = startDate;
         document.getElementById('eventEnd').value = endDate;
-        document.getElementById('eventDate').value = currentSelectedInfo.startStr.split('T')[0];
+        document.getElementById('eventDate').value = eventDate;
     }
 }
 
