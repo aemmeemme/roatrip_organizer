@@ -339,8 +339,8 @@ function openModal(isEdit, data = null) {
         document.getElementById('eventCity').value = "";
         document.getElementById('eventPrice').value = 0;
         // Autofill times from calendar selection
-        document.getElementById('eventStart').value = currentSelectedInfo.startStr;
-        document.getElementById('eventEnd').value = currentSelectedInfo.endStr;
+        document.getElementById('eventStart').value = currentSelectedInfo.startTime;
+        document.getElementById('eventEnd').value = currentSelectedInfo.endTime;
     }
 }
 
