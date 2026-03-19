@@ -320,6 +320,7 @@ function openModal(isEdit, data = null) {
     const modal = document.getElementById('eventModal');
     modal.style.display = 'flex';
     console.log("DATA:\n", data)
+    console.log("currentSelectedInfo:\n", currentSelectedInfo)
     document.getElementById('modalTitle').innerText = isEdit ? "Edit Activity" : "Add Activity";
     document.getElementById('deleteEventBtn').style.display = isEdit ? "block" : "none";
 
