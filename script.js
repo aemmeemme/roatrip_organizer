@@ -269,7 +269,7 @@ function initCalendar() {
 
         // ADD NEW EVENT
         select: function(info) {
-            console.log(info)
+            console.log("INFO:\n", info)
             // info.startStr is "YYYY-MM-DDTHH:mm:ss"
             // We split strictly by string to avoid timezone math
             const parts = info.startStr.split('T');
@@ -287,8 +287,8 @@ function initCalendar() {
         eventClick: function(info) {
             const eventObj = agendaData.find(a => a.id == info.event.id);
             if (eventObj) {
-                console.log(eventObj)
-                console.log(info.event.start)
+                console.log("eventObj:\n", eventObj)
+                console.log("event start:\n", info.event.start)
                 currentSelectedInfo = info
                 openModal(true, eventObj);
             }
@@ -319,7 +319,7 @@ async function saveAgenda() {
 function openModal(isEdit, data = null) {
     const modal = document.getElementById('eventModal');
     modal.style.display = 'flex';
-    console.log(data)
+    console.log("DATA:\n", data)
     document.getElementById('modalTitle').innerText = isEdit ? "Edit Activity" : "Add Activity";
     document.getElementById('deleteEventBtn').style.display = isEdit ? "block" : "none";
 
