@@ -350,6 +350,7 @@ function closeModal() {
 
 async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
+    console.log("date:\n", currentSelectedInfo.startStr)
     const entry = {
         date: currentSelectedInfo.startStr,
         start: document.getElementById('eventStart').value,
