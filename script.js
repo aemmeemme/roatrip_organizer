@@ -280,7 +280,7 @@ function initCalendar() {
                 startTime: parts[1].substring(0,5), // e.g. "10:30"
                 endTime: endParts[1].substring(0,5)   // e.g. "11:30"
             };
-            openModal(false);
+            openModal(false, info);
         },
 
         // EDIT EVENT
