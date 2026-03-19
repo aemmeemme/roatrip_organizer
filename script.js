@@ -357,10 +357,10 @@ function closeModal() {
 
 async function handleSaveEvent() {
     const id = document.getElementById('editEventId').value;
-    toLog = document.getElementById('eventDate').value
+    toLog = document.getElementById('eventDate').value + "T00:00:00.000Z"
     console.log("div val: ", toLog)
     const entry = {
-        date: toLog+"T00:00:00.000Z",
+        date: toLog,
         start: document.getElementById('eventStart').value,
         end: document.getElementById('eventEnd').value,
         city: document.getElementById('eventCity').value,
